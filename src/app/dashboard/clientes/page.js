@@ -21,16 +21,16 @@ import toast from 'react-hot-toast'
 import { clientsService } from '@/app/services/clientsService'
 
 const StatCard = ({ title, value, icon: Icon, color, description }) => (
-  <div className="bg-white rounded-xl shadow-sm p-6 border border-slate-200 hover:shadow-md transition-shadow">
+  <div className="bg-white rounded-xl shadow-sm p-4 lg:p-6 border border-slate-200 hover:shadow-md transition-shadow">
     <div className="flex items-center justify-between">
       <div className="flex-1">
-        <div className="flex items-center justify-between mb-3">
-          <p className="text-sm font-medium text-slate-600">{title}</p>
-          <div className={`p-2 rounded-lg ${color}`}>
-            <Icon className="h-5 w-5 text-white" />
+        <div className="flex items-center justify-between mb-2 lg:mb-3">
+          <p className="text-xs lg:text-sm font-medium text-slate-600">{title}</p>
+          <div className={`p-1.5 lg:p-2 rounded-lg ${color}`}>
+            <Icon className="h-4 w-4 lg:h-5 lg:w-5 text-white" />
           </div>
         </div>
-        <p className="text-3xl font-bold text-slate-900 mb-1">{value}</p>
+        <p className="text-xl lg:text-3xl font-bold text-slate-900 mb-1">{value}</p>
         {description && (
           <p className="text-xs text-slate-500">{description}</p>
         )}
@@ -61,15 +61,15 @@ const ClientCard = ({ client, onEdit, onDelete, onViewDetails }) => {
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-slate-200 hover:shadow-md transition-all">
-      <div className="p-6">
-        <div className="flex items-start justify-between mb-4">
-          <div className="flex items-center space-x-4">
-            <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-gradient-to-br from-blue-600 to-blue-700">
-              <Building2 className="h-6 w-6 text-white" />
+      <div className="p-4 lg:p-6">
+        <div className="flex items-start justify-between mb-3 lg:mb-4">
+          <div className="flex items-center space-x-3 lg:space-x-4">
+            <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-xl flex items-center justify-center bg-linear-to-br from-blue-600 to-blue-700 shrink-0">
+              <Building2 className="h-5 w-5 lg:h-6 lg:w-6 text-white" />
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-slate-900">{client.nombre}</h3>
-              <p className="text-sm text-slate-500 mt-1">RFC: {client.rfc}</p>
+              <h3 className="text-base lg:text-lg font-semibold text-slate-900">{client.nombre}</h3>
+              <p className="text-xs lg:text-sm text-slate-500 mt-1">RFC: {client.rfc}</p>
             </div>
           </div>
           <div className="relative" ref={menuRef}>
@@ -118,17 +118,17 @@ const ClientCard = ({ client, onEdit, onDelete, onViewDetails }) => {
         </div>
 
         <div className="space-y-2">
-          <div className="flex items-center text-sm text-slate-600">
-            <Mail className="h-4 w-4 mr-2 text-slate-400" />
-            {client.correo}
+          <div className="flex items-center text-xs lg:text-sm text-slate-600">
+            <Mail className="h-4 w-4 mr-2 text-slate-400 shrink-0" />
+            <span className="truncate">{client.correo}</span>
           </div>
-          <div className="flex items-center text-sm text-slate-600">
-            <Phone className="h-4 w-4 mr-2 text-slate-400" />
+          <div className="flex items-center text-xs lg:text-sm text-slate-600">
+            <Phone className="h-4 w-4 mr-2 text-slate-400 shrink-0" />
             {client.telefono}
           </div>
-          <div className="flex items-center text-sm text-slate-600">
-            <MapPin className="h-4 w-4 mr-2 text-slate-400" />
-            {client.direccion}
+          <div className="flex items-start text-xs lg:text-sm text-slate-600">
+            <MapPin className="h-4 w-4 mr-2 text-slate-400 shrink-0 mt-0.5" />
+            <span className="line-clamp-2">{client.direccion}</span>
           </div>
         </div>
       </div>
@@ -651,11 +651,11 @@ const ClientesPage = () => {
 
   if (loading) {
     return (
-      <div className="p-6 bg-slate-50 min-h-screen">
+      <div className="p-4 lg:p-6 bg-slate-50 min-h-screen">
         <div className="animate-pulse">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-6 lg:mb-8">
             {[...Array(4)].map((_, i) => (
-              <div key={i} className="bg-slate-200 h-32 rounded-xl"></div>
+              <div key={i} className="bg-slate-200 h-28 lg:h-32 rounded-xl"></div>
             ))}
           </div>
         </div>
@@ -664,17 +664,17 @@ const ClientesPage = () => {
   }
 
   return (
-    <div className="p-6 bg-slate-50 min-h-screen">
+    <div className="p-4 lg:p-6 bg-slate-50 min-h-screen">
       {/* Header */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between">
+      <div className="mb-6 lg:mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-slate-900">Gestión de clientes</h1>
-            <p className="text-slate-600 mt-2">Administra la cartera de clientes</p>
+            <h1 className="text-2xl lg:text-3xl font-bold text-slate-900">Gestión de clientes</h1>
+            <p className="text-sm lg:text-base text-slate-600 mt-1 lg:mt-2">Administra la cartera de clientes</p>
           </div>
           <button
             onClick={() => setShowCreateModal(true)}
-            className="flex cursor-pointer items-center space-x-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium shadow-sm"
+            className="flex cursor-pointer items-center justify-center space-x-2 px-4 lg:px-6 py-2.5 lg:py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium shadow-sm"
           >
             <UserPlus className="h-5 w-5" />
             <span>Nuevo cliente</span>
@@ -683,7 +683,7 @@ const ClientesPage = () => {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-6 lg:mb-8">
         <StatCard
           title="Total clientes"
           value={stats.total}
@@ -715,7 +715,7 @@ const ClientesPage = () => {
       </div>
 
       {/* Search */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6">
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 lg:p-6 mb-4 lg:mb-6">
         <div className="relative">
           <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 h-5 w-5" />
           <input
@@ -723,13 +723,13 @@ const ClientesPage = () => {
             placeholder="Buscar por nombre, RFC o correo..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-700 placeholder-slate-400"
+            className="w-full pl-12 pr-4 py-2.5 lg:py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-700 placeholder-slate-400"
           />
         </div>
       </div>
 
       {/* Clients Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 lg:gap-6">
         {filteredClients.map((client) => (
           <ClientCard
             key={client.id}

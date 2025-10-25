@@ -17,16 +17,16 @@ import {
 } from 'lucide-react'
 
 const StatCard = ({ title, value, change, changeType, icon: Icon, color, description }) => (
-  <div className="bg-white rounded-xl shadow-sm p-6 border border-slate-200 hover:shadow-md transition-shadow">
+  <div className="bg-white rounded-xl shadow-sm p-4 lg:p-6 border border-slate-200 hover:shadow-md transition-shadow">
     <div className="flex items-center justify-between">
       <div className="flex-1">
-        <div className="flex items-center justify-between mb-3">
-          <p className="text-sm font-medium text-slate-600">{title}</p>
-          <div className={`p-2 rounded-lg ${color}`}>
-            <Icon className="h-5 w-5 text-white" />
+        <div className="flex items-center justify-between mb-2 lg:mb-3">
+          <p className="text-xs lg:text-sm font-medium text-slate-600">{title}</p>
+          <div className={`p-1.5 lg:p-2 rounded-lg ${color}`}>
+            <Icon className="h-4 w-4 lg:h-5 lg:w-5 text-white" />
           </div>
         </div>
-        <p className="text-3xl font-bold text-slate-900 mb-1">{value}</p>
+        <p className="text-2xl lg:text-3xl font-bold text-slate-900 mb-1">{value}</p>
         {description && (
           <p className="text-xs text-slate-500 mb-2">{description}</p>
         )}
@@ -35,12 +35,12 @@ const StatCard = ({ title, value, change, changeType, icon: Icon, color, descrip
             changeType === 'positive' ? 'text-emerald-600' : 'text-red-600'
           }`}>
             {changeType === 'positive' ? (
-              <TrendingUp className="h-4 w-4 mr-1" />
+              <TrendingUp className="h-3 w-3 lg:h-4 lg:w-4 mr-1" />
             ) : (
-              <TrendingDown className="h-4 w-4 mr-1" />
+              <TrendingDown className="h-3 w-3 lg:h-4 lg:w-4 mr-1" />
             )}
-            <span className="text-sm font-medium">{change}</span>
-            <span className="text-xs text-slate-500 ml-1">vs mes anterior</span>
+            <span className="text-xs lg:text-sm font-medium">{change}</span>
+            <span className="text-xs text-slate-500 ml-1 hidden sm:inline">vs mes anterior</span>
           </div>
         )}
       </div>
@@ -50,29 +50,29 @@ const StatCard = ({ title, value, change, changeType, icon: Icon, color, descrip
 
 const RecentTrips = ({ trips }) => (
   <div className="bg-white rounded-xl shadow-sm border border-slate-200">
-    <div className="p-6 border-b border-slate-100">
+    <div className="p-4 lg:p-6 border-b border-slate-100">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-slate-900">Servicios Recientes</h3>
-        <Activity className="h-5 w-5 text-slate-400" />
+        <h3 className="text-base lg:text-lg font-semibold text-slate-900">Servicios Recientes</h3>
+        <Activity className="h-4 w-4 lg:h-5 lg:w-5 text-slate-400" />
       </div>
     </div>
-    <div className="p-6">
-      <div className="space-y-4">
+    <div className="p-4 lg:p-6">
+      <div className="space-y-3 lg:space-y-4">
         {trips.map((trip) => (
-          <div key={trip.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-lg border border-slate-100 hover:bg-slate-100 transition-colors">
-            <div className="flex items-center space-x-4">
-              <div className={`w-3 h-3 rounded-full ${
+          <div key={trip.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 lg:p-4 bg-slate-50 rounded-lg border border-slate-100 hover:bg-slate-100 transition-colors gap-2 sm:gap-4">
+            <div className="flex items-center space-x-3 lg:space-x-4">
+              <div className={`w-2.5 h-2.5 lg:w-3 lg:h-3 rounded-full shrink-0 ${
                 trip.status === 'COMPLETED' ? 'bg-emerald-500' :
                 trip.status === 'IN_PROGRESS' ? 'bg-blue-600' :
                 trip.status === 'PROGRAMMED' ? 'bg-amber-500' : 'bg-red-500'
               }`}></div>
-              <div>
-                <p className="font-semibold text-slate-900">{trip.tripNumber}</p>
-                <p className="text-sm text-slate-600">{trip.origin} → {trip.destination}</p>
+              <div className="min-w-0">
+                <p className="font-semibold text-slate-900 text-sm lg:text-base">{trip.tripNumber}</p>
+                <p className="text-xs lg:text-sm text-slate-600 truncate">{trip.origin} → {trip.destination}</p>
               </div>
             </div>
-            <div className="text-right">
-              <p className="text-sm font-medium text-slate-900">{trip.client}</p>
+            <div className="text-left sm:text-right pl-5 sm:pl-0">
+              <p className="text-xs lg:text-sm font-medium text-slate-900">{trip.client}</p>
               <p className="text-xs text-slate-500">{trip.date}</p>
             </div>
           </div>
@@ -84,22 +84,22 @@ const RecentTrips = ({ trips }) => (
 
 const TasksWidget = ({ tasks }) => (
   <div className="bg-white rounded-xl shadow-sm border border-slate-200">
-    <div className="p-6 border-b border-slate-100">
+    <div className="p-4 lg:p-6 border-b border-slate-100">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-slate-900">Alertas y Tareas</h3>
-        <AlertTriangle className="h-5 w-5 text-slate-400" />
+        <h3 className="text-base lg:text-lg font-semibold text-slate-900">Alertas y Tareas</h3>
+        <AlertTriangle className="h-4 w-4 lg:h-5 lg:w-5 text-slate-400" />
       </div>
     </div>
-    <div className="p-6">
-      <div className="space-y-3">
+    <div className="p-4 lg:p-6">
+      <div className="space-y-2 lg:space-y-3">
         {tasks.map((task) => (
-          <div key={task.id} className="flex items-start space-x-3 p-3 rounded-lg hover:bg-slate-50 transition-colors">
-            <div className={`w-2 h-2 rounded-full mt-2 ${
+          <div key={task.id} className="flex items-start space-x-2 lg:space-x-3 p-2.5 lg:p-3 rounded-lg hover:bg-slate-50 transition-colors">
+            <div className={`w-2 h-2 rounded-full mt-1.5 lg:mt-2 shrink-0 ${
               task.priority === 'high' ? 'bg-red-500' :
               task.priority === 'medium' ? 'bg-amber-500' : 'bg-emerald-500'
             }`}></div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-slate-900">{task.title}</p>
+              <p className="text-xs lg:text-sm font-medium text-slate-900">{task.title}</p>
               <p className="text-xs text-slate-600 mt-1">{task.description}</p>
             </div>
             <div className="text-xs text-slate-400 whitespace-nowrap">
@@ -114,26 +114,26 @@ const TasksWidget = ({ tasks }) => (
 
 const QuickActions = () => (
   <div className="bg-white rounded-xl shadow-sm border border-slate-200">
-    <div className="p-6 border-b border-slate-100">
-      <h3 className="text-lg font-semibold text-slate-900">Acciones Rápidas</h3>
+    <div className="p-4 lg:p-6 border-b border-slate-100">
+      <h3 className="text-base lg:text-lg font-semibold text-slate-900">Acciones Rápidas</h3>
     </div>
-    <div className="p-6">
-      <div className="grid grid-cols-2 gap-4">
-        <button className="p-4 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors text-center">
-          <Truck className="h-6 w-6 mx-auto mb-2" />
-          <span className="text-sm font-medium">Nuevo Servicio</span>
+    <div className="p-4 lg:p-6">
+      <div className="grid grid-cols-2 gap-3 lg:gap-4">
+        <button className="p-3 lg:p-4 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors text-center">
+          <Truck className="h-5 w-5 lg:h-6 lg:w-6 mx-auto mb-1 lg:mb-2" />
+          <span className="text-xs lg:text-sm font-medium">Nuevo Servicio</span>
         </button>
-        <button className="p-4 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors text-center">
-          <FileText className="h-6 w-6 mx-auto mb-2" />
-          <span className="text-sm font-medium">Carta Porte</span>
+        <button className="p-3 lg:p-4 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors text-center">
+          <FileText className="h-5 w-5 lg:h-6 lg:w-6 mx-auto mb-1 lg:mb-2" />
+          <span className="text-xs lg:text-sm font-medium">Carta Porte</span>
         </button>
-        <button className="p-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-center">
-          <Users className="h-6 w-6 mx-auto mb-2" />
-          <span className="text-sm font-medium">Nuevo Cliente</span>
+        <button className="p-3 lg:p-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-center">
+          <Users className="h-5 w-5 lg:h-6 lg:w-6 mx-auto mb-1 lg:mb-2" />
+          <span className="text-xs lg:text-sm font-medium">Nuevo Cliente</span>
         </button>
-        <button className="p-4 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-center">
-          <BarChart3 className="h-6 w-6 mx-auto mb-2" />
-          <span className="text-sm font-medium">Ver Reportes</span>
+        <button className="p-3 lg:p-4 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-center">
+          <BarChart3 className="h-5 w-5 lg:h-6 lg:w-6 mx-auto mb-1 lg:mb-2" />
+          <span className="text-xs lg:text-sm font-medium">Ver Reportes</span>
         </button>
       </div>
     </div>
@@ -235,11 +235,11 @@ const Dashboard = () => {
 
   if (loading) {
     return (
-      <div className="p-6 bg-slate-50 min-h-screen">
+      <div className="p-4 lg:p-6 bg-slate-50 min-h-screen">
         <div className="animate-pulse">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-6 lg:mb-8">
             {[...Array(4)].map((_, i) => (
-              <div key={i} className="bg-slate-200 h-32 rounded-xl"></div>
+              <div key={i} className="bg-slate-200 h-28 lg:h-32 rounded-xl"></div>
             ))}
           </div>
         </div>
@@ -248,15 +248,15 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="p-6 bg-slate-50 min-h-screen">
+    <div className="p-4 lg:p-6 bg-slate-50 min-h-screen">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-slate-900">Panel de Control</h1>
-        <p className="text-slate-600 mt-2">Resumen ejecutivo de operaciones</p>
+      <div className="mb-6 lg:mb-8">
+        <h1 className="text-2xl lg:text-3xl font-bold text-slate-900">Panel de Control</h1>
+        <p className="text-sm lg:text-base text-slate-600 mt-1 lg:mt-2">Resumen ejecutivo de operaciones</p>
       </div>
 
       {/* Main Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-6 lg:mb-8">
         <StatCard
           title="Servicios Activos"
           value={stats.activeTrips}
@@ -296,54 +296,56 @@ const Dashboard = () => {
       </div>
 
       {/* Secondary Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div className="bg-white rounded-xl shadow-sm p-6 border border-slate-200">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-slate-900">Estado de Servicios</h3>
-            <Clock className="h-5 w-5 text-slate-400" />
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6 mb-6 lg:mb-8">
+        <div className="bg-white rounded-xl shadow-sm p-4 lg:p-6 border border-slate-200">
+          <div className="flex items-center justify-between mb-3 lg:mb-4">
+            <h3 className="text-base lg:text-lg font-semibold text-slate-900">Estado de Servicios</h3>
+            <Clock className="h-4 w-4 lg:h-5 lg:w-5 text-slate-400" />
           </div>
-          <div className="space-y-3">
+          <div className="space-y-2 lg:space-y-3">
             <div className="flex justify-between items-center">
-              <span className="text-sm text-slate-600">En Ruta</span>
-              <span className="text-sm font-semibold text-blue-600">{stats.activeTrips}</span>
+              <span className="text-xs lg:text-sm text-slate-600">En Ruta</span>
+              <span className="text-xs lg:text-sm font-semibold text-blue-600">{stats.activeTrips}</span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-sm text-slate-600">Completados</span>
-              <span className="text-sm font-semibold text-emerald-600">89</span>
+              <span className="text-xs lg:text-sm text-slate-600">Completados</span>
+              <span className="text-xs lg:text-sm font-semibold text-emerald-600">89</span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-sm text-slate-600">Programados</span>
-              <span className="text-sm font-semibold text-amber-600">44</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl shadow-sm p-6 border border-slate-200">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-slate-900">Flota Vehicular</h3>
-            <Truck className="h-5 w-5 text-slate-400" />
-          </div>
-          <div className="space-y-3">
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-slate-600">Activos</span>
-              <span className="text-sm font-semibold text-emerald-600">{stats.vehiclesActive}</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-slate-600">En Mantenimiento</span>
-              <span className="text-sm font-semibold text-amber-600">3</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-slate-600">Fuera de Servicio</span>
-              <span className="text-sm font-semibold text-red-600">1</span>
+              <span className="text-xs lg:text-sm text-slate-600">Programados</span>
+              <span className="text-xs lg:text-sm font-semibold text-amber-600">44</span>
             </div>
           </div>
         </div>
 
-        <QuickActions />
+        <div className="bg-white rounded-xl shadow-sm p-4 lg:p-6 border border-slate-200">
+          <div className="flex items-center justify-between mb-3 lg:mb-4">
+            <h3 className="text-base lg:text-lg font-semibold text-slate-900">Flota Vehicular</h3>
+            <Truck className="h-4 w-4 lg:h-5 lg:w-5 text-slate-400" />
+          </div>
+          <div className="space-y-2 lg:space-y-3">
+            <div className="flex justify-between items-center">
+              <span className="text-xs lg:text-sm text-slate-600">Activos</span>
+              <span className="text-xs lg:text-sm font-semibold text-emerald-600">{stats.vehiclesActive}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-xs lg:text-sm text-slate-600">En Mantenimiento</span>
+              <span className="text-xs lg:text-sm font-semibold text-amber-600">3</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-xs lg:text-sm text-slate-600">Fuera de Servicio</span>
+              <span className="text-xs lg:text-sm font-semibold text-red-600">1</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="md:col-span-2 lg:col-span-1">
+          <QuickActions />
+        </div>
       </div>
 
       {/* Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
         <div className="lg:col-span-2">
           <RecentTrips trips={recentTrips} />
         </div>

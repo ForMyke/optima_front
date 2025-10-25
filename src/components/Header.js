@@ -2,12 +2,13 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { Bell, Search, User, LogOut, ChevronDown } from 'lucide-react'
+import { Bell, Search, User, LogOut, ChevronDown, Menu } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { authService } from '@/app/services/authService'
 
-export function Header() {
+export function Header({ onMenuClick }) {
   const [showUserMenu, setShowUserMenu] = useState(false)
+  const [showSearch, setShowSearch] = useState(false)
   // Lazy initialization - solo se ejecuta una vez en el cliente
   const [user, setUser] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -42,10 +43,19 @@ export function Header() {
   }
 
   return (
-    <header className="bg-white shadow-sm border-b border-slate-200">
-      <div className="flex items-center justify-between px-6 py-4">
-        <div className="flex-1 max-w-2xl">
-          <div className="relative">
+    <header className="bg-white shadow-sm border-b border-slate-200 sticky top-0 z-30">
+      <div className="flex items-center justify-between px-4 lg:px-6 py-3 lg:py-4">
+        {/* Botón menú móvil */}
+        <button
+          onClick={onMenuClick}
+          className="lg:hidden p-2 rounded-lg hover:bg-slate-100 transition-colors"
+        >
+          <Menu className="h-6 w-6 text-slate-600" />
+        </button>
+
+        {/* Search bar - Desktop */}
+        <div className="hidden md:flex flex-1 max-w-2xl">
+          <div className="relative w-full">
             <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 h-5 w-5" />
             <input
               type="text"
@@ -55,22 +65,30 @@ export function Header() {
           </div>
         </div>
 
-        <div className="flex items-center space-x-4 ml-6">
-          <button className="relative p-3 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-xl transition-all">
+        {/* Botón search móvil */}
+        <button
+          onClick={() => setShowSearch(!showSearch)}
+          className="md:hidden p-2 rounded-lg hover:bg-slate-100 transition-colors"
+        >
+          <Search className="h-5 w-5 text-slate-600" />
+        </button>
+
+        <div className="flex items-center space-x-2 lg:space-x-4 ml-2 lg:ml-6">
+          <button className="relative p-2 lg:p-3 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-xl transition-all">
             <Bell className="h-5 w-5" />
-            <span className="absolute top-2 right-2 h-2 w-2 bg-red-500 rounded-full animate-pulse"></span>
+            <span className="absolute top-1 right-1 lg:top-2 lg:right-2 h-2 w-2 bg-red-500 rounded-full animate-pulse"></span>
           </button>
 
           <div className="relative" ref={userMenuRef}>
             <button
               onClick={() => setShowUserMenu(!showUserMenu)}
-              className="flex items-center space-x-3 p-2 rounded-xl hover:bg-slate-50 transition-all group"
+              className="flex items-center space-x-2 lg:space-x-3 p-2 rounded-xl hover:bg-slate-50 transition-all group"
               suppressHydrationWarning
             >
-              <div className="w-10 h-10 bg-linear-to-br from-slate-600 to-slate-700 rounded-xl flex items-center justify-center">
-                <User className="h-5 w-5 text-white" />
+              <div className="w-8 h-8 lg:w-10 lg:h-10 bg-linear-to-br from-slate-600 to-slate-700 rounded-xl flex items-center justify-center">
+                <User className="h-4 w-4 lg:h-5 lg:w-5 text-white" />
               </div>
-              <div className="text-left hidden sm:block" suppressHydrationWarning>
+              <div className="text-left hidden lg:block" suppressHydrationWarning>
                 <p className="text-sm font-semibold text-slate-700" suppressHydrationWarning>
                   {user?.nombre || 'Usuario'}
                 </p>
@@ -78,7 +96,7 @@ export function Header() {
                   {user?.rol?.[0]?.replace('ROLE_', '') || 'Usuario'}
                 </p>
               </div>
-              <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform ${showUserMenu ? 'rotate-180' : ''}`} />
+              <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform hidden sm:block ${showUserMenu ? 'rotate-180' : ''}`} />
             </button>
 
             {showUserMenu && (
@@ -100,6 +118,21 @@ export function Header() {
           </div>
         </div>
       </div>
+
+      {/* Search bar móvil expandible */}
+      {showSearch && (
+        <div className="md:hidden px-4 pb-3">
+          <div className="relative">
+            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 h-5 w-5" />
+            <input
+              type="text"
+              placeholder="Buscar..."
+              className="w-full pl-12 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-slate-500 focus:border-transparent transition-all text-slate-700 placeholder-slate-400"
+              autoFocus
+            />
+          </div>
+        </div>
+      )}
     </header>
   )
 }
