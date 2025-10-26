@@ -22,6 +22,11 @@ import {
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { bitacoraService } from '@/app/services/bitacoraService'
+import { viajesService } from '@/app/services/viajesService'
+import { operadoresService } from '@/app/services/operadoresService'
+import { clientsService } from '@/app/services/clientsService'
+import { unidadesService } from '@/app/services/unidadesService'
+import { authService } from '@/app/services/authService'
 
 const StatCard = ({ title, value, icon: Icon, color, description }) => (
   <div className="bg-white rounded-xl shadow-sm p-6 border border-slate-200 hover:shadow-md transition-shadow">
@@ -183,7 +188,7 @@ const BitacoraCard = ({ bitacora, onEdit, onDelete, onViewDetails }) => {
   )
 }
 
-const CreateBitacoraModal = ({ isOpen, onClose, onSave }) => {
+const CreateBitacoraModal = ({ isOpen, onClose, onSave, viajes, operadores, clientes, unidades }) => {
   const [formData, setFormData] = useState({
     viajeId: '',
     folio: '',
@@ -202,13 +207,45 @@ const CreateBitacoraModal = ({ isOpen, onClose, onSave }) => {
     gastosExtras: '',
     costoTotal: '',
     comentarios: '',
-    numeroFactura: '',
-    creadoPor: ''
+    numeroFactura: ''
   })
   const [isLoading, setIsLoading] = useState(false)
+  const [currentUser, setCurrentUser] = useState(null)
+
+  // Obtener usuario autenticado al abrir el modal
+  useEffect(() => {
+    if (isOpen) {
+      const user = authService.getUser()
+      setCurrentUser(user)
+    }
+  }, [isOpen])
+
+  // Autocompletar datos cuando se selecciona un viaje
+  const handleViajeChange = (viajeId) => {
+    const viaje = viajes.find(v => v.id === parseInt(viajeId))
+    if (viaje) {
+      setFormData({
+        ...formData,
+        viajeId,
+        clienteId: viaje.idCliente || viaje.clienteId || '',
+        origen: viaje.origen || '',
+        destino: viaje.destino || '',
+        operadorId: viaje.idOperador || viaje.operadorId || '',
+        unidadId: viaje.idUnidad || viaje.unidadId || ''
+      })
+    } else {
+      setFormData({ ...formData, viajeId })
+    }
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    
+    if (!currentUser?.id) {
+      toast.error('No se pudo obtener el usuario autenticado')
+      return
+    }
+    
     setIsLoading(true)
     try {
       // Convertir strings a números donde corresponda
@@ -223,7 +260,7 @@ const CreateBitacoraModal = ({ isOpen, onClose, onSave }) => {
         comisionOperador: parseFloat(formData.comisionOperador) || 0,
         gastosExtras: parseFloat(formData.gastosExtras) || 0,
         costoTotal: parseFloat(formData.costoTotal) || 0,
-        creadoPor: parseInt(formData.creadoPor)
+        creadoPor: currentUser.id // Usar el ID del usuario autenticado
       }
       await onSave(dataToSend)
       setFormData({
@@ -244,8 +281,7 @@ const CreateBitacoraModal = ({ isOpen, onClose, onSave }) => {
         gastosExtras: '',
         costoTotal: '',
         comentarios: '',
-        numeroFactura: '',
-        creadoPor: ''
+        numeroFactura: ''
       })
       onClose()
     } catch (error) {
@@ -258,7 +294,7 @@ const CreateBitacoraModal = ({ isOpen, onClose, onSave }) => {
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 backdrop-blur-xs backdrop-blur-xs bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+    <div className="fixed inset-0 backdrop-blur-xs bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
       <div className="bg-white rounded-xl shadow-xl max-w-4xl w-full my-8">
         <div className="p-6 border-b border-slate-200">
           <h2 className="text-2xl font-bold text-slate-900">Nueva bitácora de viaje</h2>
@@ -276,16 +312,22 @@ const CreateBitacoraModal = ({ isOpen, onClose, onSave }) => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">
-                    ID Viaje *
+                    Viaje *
                   </label>
-                  <input
-                    type="number"
+                  <select
                     value={formData.viajeId}
-                    onChange={(e) => setFormData({ ...formData, viajeId: e.target.value })}
+                    onChange={(e) => handleViajeChange(e.target.value)}
                     className="w-full px-4 py-3 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-900"
-                    placeholder="1"
                     required
-                  />
+                  >
+                    <option value="">Selecciona un viaje</option>
+                    {viajes && viajes.map((viaje) => (
+                      <option key={viaje.id} value={viaje.id}>
+                        #{viaje.id} - {viaje.origen} → {viaje.destino}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-xs text-slate-500 mt-1">El viaje autocompletará algunos campos</p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">
@@ -296,22 +338,27 @@ const CreateBitacoraModal = ({ isOpen, onClose, onSave }) => {
                     value={formData.folio}
                     onChange={(e) => setFormData({ ...formData, folio: e.target.value })}
                     className="w-full px-4 py-3 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-900"
-                    placeholder="VJ-2025-001"
+                    placeholder="BIT-2025-001"
                     required
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">
-                    ID Cliente *
+                    Cliente *
                   </label>
-                  <input
-                    type="number"
+                  <select
                     value={formData.clienteId}
                     onChange={(e) => setFormData({ ...formData, clienteId: e.target.value })}
                     className="w-full px-4 py-3 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-900"
-                    placeholder="1"
                     required
-                  />
+                  >
+                    <option value="">Selecciona un cliente</option>
+                    {clientes && clientes.map((cliente) => (
+                      <option key={cliente.id} value={cliente.id}>
+                        {cliente.nombre}
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">
@@ -419,29 +466,39 @@ const CreateBitacoraModal = ({ isOpen, onClose, onSave }) => {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">
-                    ID Operador *
+                    Operador *
                   </label>
-                  <input
-                    type="number"
+                  <select
                     value={formData.operadorId}
                     onChange={(e) => setFormData({ ...formData, operadorId: e.target.value })}
                     className="w-full px-4 py-3 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-900"
-                    placeholder="1"
                     required
-                  />
+                  >
+                    <option value="">Selecciona un operador</option>
+                    {operadores && operadores.map((operador) => (
+                      <option key={operador.id} value={operador.id}>
+                        {operador.nombre} - {operador.licencia}
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">
-                    ID Unidad *
+                    Unidad *
                   </label>
-                  <input
-                    type="number"
+                  <select
                     value={formData.unidadId}
                     onChange={(e) => setFormData({ ...formData, unidadId: e.target.value })}
                     className="w-full px-4 py-3 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-900"
-                    placeholder="1"
                     required
-                  />
+                  >
+                    <option value="">Selecciona una unidad</option>
+                    {unidades && unidades.map((unidad) => (
+                      <option key={unidad.id} value={unidad.id}>
+                        {unidad.numeroEconomico} - {unidad.placas}
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">
@@ -556,16 +613,16 @@ const CreateBitacoraModal = ({ isOpen, onClose, onSave }) => {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">
-                    Creado Por (ID Usuario) *
+                    Registrado por
                   </label>
-                  <input
-                    type="number"
-                    value={formData.creadoPor}
-                    onChange={(e) => setFormData({ ...formData, creadoPor: e.target.value })}
-                    className="w-full px-4 py-3 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-900"
-                    placeholder="1"
-                    required
-                  />
+                  <div className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg text-slate-700">
+                    <div className="flex items-center">
+                      <User className="h-4 w-4 mr-2 text-slate-500" />
+                      <span className="font-medium">{currentUser?.nombre || 'Cargando...'}</span>
+                      <span className="ml-2 text-sm text-slate-500">({currentUser?.email})</span>
+                    </div>
+                  </div>
+                  <p className="text-xs text-slate-500 mt-1">Usuario autenticado actualmente</p>
                 </div>
               </div>
             </div>
@@ -581,7 +638,7 @@ const CreateBitacoraModal = ({ isOpen, onClose, onSave }) => {
             </button>
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={isLoading || !currentUser}
               className="px-6 cursor-pointer py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? 'Guardando...' : 'Crear bitácora'}
@@ -593,7 +650,7 @@ const CreateBitacoraModal = ({ isOpen, onClose, onSave }) => {
   )
 }
 
-const EditBitacoraModal = ({ isOpen, onClose, onSave, bitacora }) => {
+const EditBitacoraModal = ({ isOpen, onClose, onSave, bitacora, viajes, operadores, clientes, unidades }) => {
   const [formData, setFormData] = useState({
     viajeId: '',
     folio: '',
@@ -616,6 +673,15 @@ const EditBitacoraModal = ({ isOpen, onClose, onSave, bitacora }) => {
     creadoPor: ''
   })
   const [isLoading, setIsLoading] = useState(false)
+  const [currentUser, setCurrentUser] = useState(null)
+
+  // Obtener usuario autenticado al abrir el modal
+  useEffect(() => {
+    if (isOpen) {
+      const user = authService.getUser()
+      setCurrentUser(user)
+    }
+  }, [isOpen])
 
   useEffect(() => {
     if (bitacora) {
@@ -645,6 +711,12 @@ const EditBitacoraModal = ({ isOpen, onClose, onSave, bitacora }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    
+    if (!currentUser?.id) {
+      toast.error('No se pudo obtener el usuario autenticado')
+      return
+    }
+    
     setIsLoading(true)
     try {
       const dataToSend = {
@@ -658,7 +730,7 @@ const EditBitacoraModal = ({ isOpen, onClose, onSave, bitacora }) => {
         comisionOperador: parseFloat(formData.comisionOperador) || 0,
         gastosExtras: parseFloat(formData.gastosExtras) || 0,
         costoTotal: parseFloat(formData.costoTotal) || 0,
-        creadoPor: parseInt(formData.creadoPor)
+        creadoPor: currentUser.id // Usar el ID del usuario autenticado
       }
       await onSave(bitacora.id, dataToSend)
       onClose()
@@ -672,7 +744,7 @@ const EditBitacoraModal = ({ isOpen, onClose, onSave, bitacora }) => {
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 backdrop-blur-xs  bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+    <div className="fixed inset-0 backdrop-blur-xs bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
       <div className="bg-white rounded-xl shadow-xl max-w-4xl w-full my-8">
         <div className="p-6 border-b border-slate-200">
           <h2 className="text-2xl font-bold text-slate-900">Editar bitácora de viaje</h2>
@@ -690,15 +762,21 @@ const EditBitacoraModal = ({ isOpen, onClose, onSave, bitacora }) => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">
-                    ID Viaje *
+                    Viaje *
                   </label>
-                  <input
-                    type="number"
+                  <select
                     value={formData.viajeId}
                     onChange={(e) => setFormData({ ...formData, viajeId: e.target.value })}
                     className="w-full px-4 py-3 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-900"
                     required
-                  />
+                  >
+                    <option value="">Selecciona un viaje</option>
+                    {viajes && viajes.map((viaje) => (
+                      <option key={viaje.id} value={viaje.id}>
+                        #{viaje.id} - {viaje.origen} → {viaje.destino}
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">
@@ -714,15 +792,21 @@ const EditBitacoraModal = ({ isOpen, onClose, onSave, bitacora }) => {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">
-                    ID Cliente *
+                    Cliente *
                   </label>
-                  <input
-                    type="number"
+                  <select
                     value={formData.clienteId}
                     onChange={(e) => setFormData({ ...formData, clienteId: e.target.value })}
                     className="w-full px-4 py-3 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-900"
                     required
-                  />
+                  >
+                    <option value="">Selecciona un cliente</option>
+                    {clientes && clientes.map((cliente) => (
+                      <option key={cliente.id} value={cliente.id}>
+                        {cliente.nombre}
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">
@@ -827,27 +911,39 @@ const EditBitacoraModal = ({ isOpen, onClose, onSave, bitacora }) => {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">
-                    ID Operador *
+                    Operador *
                   </label>
-                  <input
-                    type="number"
+                  <select
                     value={formData.operadorId}
                     onChange={(e) => setFormData({ ...formData, operadorId: e.target.value })}
                     className="w-full px-4 py-3 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-900"
                     required
-                  />
+                  >
+                    <option value="">Selecciona un operador</option>
+                    {operadores && operadores.map((operador) => (
+                      <option key={operador.id} value={operador.id}>
+                        {operador.nombre} - {operador.licencia}
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">
-                    ID Unidad *
+                    Unidad *
                   </label>
-                  <input
-                    type="number"
+                  <select
                     value={formData.unidadId}
                     onChange={(e) => setFormData({ ...formData, unidadId: e.target.value })}
                     className="w-full px-4 py-3 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-900"
                     required
-                  />
+                  >
+                    <option value="">Selecciona una unidad</option>
+                    {unidades && unidades.map((unidad) => (
+                      <option key={unidad.id} value={unidad.id}>
+                        {unidad.numeroEconomico} - {unidad.placas}
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">
@@ -955,15 +1051,16 @@ const EditBitacoraModal = ({ isOpen, onClose, onSave, bitacora }) => {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">
-                    Creado Por (ID Usuario) *
+                    Actualizado por
                   </label>
-                  <input
-                    type="number"
-                    value={formData.creadoPor}
-                    onChange={(e) => setFormData({ ...formData, creadoPor: e.target.value })}
-                    className="w-full px-4 py-3 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-900"
-                    required
-                  />
+                  <div className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg text-slate-700">
+                    <div className="flex items-center">
+                      <User className="h-4 w-4 mr-2 text-slate-500" />
+                      <span className="font-medium">{currentUser?.nombre || 'Cargando...'}</span>
+                      <span className="ml-2 text-sm text-slate-500">({currentUser?.email})</span>
+                    </div>
+                  </div>
+                  <p className="text-xs text-slate-500 mt-1">Usuario autenticado actualmente</p>
                 </div>
               </div>
             </div>
@@ -979,7 +1076,7 @@ const EditBitacoraModal = ({ isOpen, onClose, onSave, bitacora }) => {
             </button>
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={isLoading || !currentUser}
               className="px-6 cursor-pointer py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? 'Actualizando...' : 'Actualizar bitácora'}
@@ -1251,8 +1348,14 @@ export default function BitacoraPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [selectedBitacora, setSelectedBitacora] = useState(null)
 
+  // Estados para catálogos
+  const [viajes, setViajes] = useState([])
+  const [operadores, setOperadores] = useState([])
+  const [clientes, setClientes] = useState([])
+  const [unidades, setUnidades] = useState([])
+
   useEffect(() => {
-    fetchBitacoras()
+    loadAllData()
   }, [])
 
   useEffect(() => {
@@ -1269,11 +1372,27 @@ export default function BitacoraPage() {
     }
   }, [searchTerm, bitacoras])
 
-  const fetchBitacoras = async () => {
+  const loadAllData = async () => {
     try {
       setIsLoading(true)
+      await Promise.all([
+        fetchBitacoras(),
+        fetchViajes(),
+        fetchOperadores(),
+        fetchClientes(),
+        fetchUnidades()
+      ])
+    } catch (error) {
+      console.error('Error loading data:', error)
+      toast.error('Error al cargar los datos')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const fetchBitacoras = async () => {
+    try {
       const response = await bitacoraService.getAll()
-      // Manejar diferentes formatos de respuesta de la API
       const data = Array.isArray(response) ? response : (response.content || response.data || [])
       setBitacoras(data)
       setFilteredBitacoras(data)
@@ -1282,8 +1401,47 @@ export default function BitacoraPage() {
       toast.error('Error al cargar las bitácoras')
       setBitacoras([])
       setFilteredBitacoras([])
-    } finally {
-      setIsLoading(false)
+    }
+  }
+
+  const fetchViajes = async () => {
+    try {
+      const response = await viajesService.getViajes(0, 100)
+      setViajes(response.content || [])
+    } catch (error) {
+      console.error('Error fetching viajes:', error)
+      setViajes([])
+    }
+  }
+
+  const fetchOperadores = async () => {
+    try {
+      const response = await operadoresService.getOperadores(0, 100)
+      setOperadores(response.content || [])
+    } catch (error) {
+      console.error('Error fetching operadores:', error)
+      setOperadores([])
+    }
+  }
+
+  const fetchClientes = async () => {
+    try {
+      const response = await clientsService.getClients(0, 100)
+      setClientes(response.content || [])
+    } catch (error) {
+      console.error('Error fetching clientes:', error)
+      setClientes([])
+    }
+  }
+
+  const fetchUnidades = async () => {
+    try {
+      const response = await unidadesService.getAll()
+      const data = Array.isArray(response) ? response : (response.content || response.data || [])
+      setUnidades(data)
+    } catch (error) {
+      console.error('Error fetching unidades:', error)
+      setUnidades([])
     }
   }
 
@@ -1479,6 +1637,10 @@ export default function BitacoraPage() {
         isOpen={showCreateModal}
         onClose={() => setShowCreateModal(false)}
         onSave={handleCreate}
+        viajes={viajes}
+        operadores={operadores}
+        clientes={clientes}
+        unidades={unidades}
       />
 
       <EditBitacoraModal
@@ -1489,6 +1651,10 @@ export default function BitacoraPage() {
         }}
         onSave={handleEdit}
         bitacora={selectedBitacora}
+        viajes={viajes}
+        operadores={operadores}
+        clientes={clientes}
+        unidades={unidades}
       />
 
       <ViewBitacoraModal

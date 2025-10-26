@@ -2,28 +2,22 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { 
-  Users as UsersIcon, 
-  UserPlus,
+  Truck,
+  Plus,
   Search,
-  Filter,
   MoreVertical,
   Edit2,
   Trash2,
-  User,
-  Mail,
-  Phone,
-  Calendar,
-  MapPin,
-  CreditCard,
-  Shield,
-  CheckCircle,
-  XCircle,
   Eye,
-  AlertCircle
+  Calendar,
+  Gauge,
+  AlertCircle,
+  CheckCircle,
+  Settings,
+  Wrench
 } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { operadoresService } from '@/app/services/operadoresService'
-import { usersService } from '@/app/services/usersService'
+import { unidadesService } from '@/app/services/unidadesService'
 
 const StatCard = ({ title, value, icon: Icon, color, description }) => (
   <div className="bg-white rounded-xl shadow-sm p-6 border border-slate-200 hover:shadow-md transition-shadow">
@@ -44,7 +38,7 @@ const StatCard = ({ title, value, icon: Icon, color, description }) => (
   </div>
 )
 
-const OperadorCard = ({ operador, onEdit, onDelete, onViewDetails }) => {
+const UnidadCard = ({ unidad, onEdit, onDelete, onViewDetails }) => {
   const [showMenu, setShowMenu] = useState(false)
   const menuRef = useRef(null)
 
@@ -64,65 +58,44 @@ const OperadorCard = ({ operador, onEdit, onDelete, onViewDetails }) => {
     }
   }, [showMenu])
 
-  // Verificar si la licencia está por vencer (30 días o menos)
-  const isLicenseExpiringSoon = () => {
-    if (!operador.licenciaVencimiento) return false
-    const today = new Date()
-    const expirationDate = new Date(operador.licenciaVencimiento)
-    const daysUntilExpiration = Math.ceil((expirationDate - today) / (1000 * 60 * 60 * 24))
-    return daysUntilExpiration <= 30 && daysUntilExpiration >= 0
+  const formatDate = (date) => {
+    if (!date) return 'N/A'
+    return new Date(date).toLocaleDateString('es-MX', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    })
   }
 
-  const isLicenseExpired = () => {
-    if (!operador.licenciaVencimiento) return false
-    const today = new Date()
-    const expirationDate = new Date(operador.licenciaVencimiento)
-    return expirationDate < today
+  const getEstadoColor = (estado) => {
+    switch (estado) {
+      case 'ACTIVA':
+        return 'bg-emerald-100 text-emerald-800'
+      case 'MANTENIMIENTO':
+        return 'bg-amber-100 text-amber-800'
+      case 'INACTIVA':
+        return 'bg-red-100 text-red-800'
+      default:
+        return 'bg-slate-100 text-slate-800'
+    }
   }
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-slate-200 hover:shadow-md transition-all">
       <div className="p-6">
         <div className="flex items-start justify-between mb-4">
-          <div className="flex items-center space-x-4">
-            <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-              operador.activo 
-                ? 'bg-gradient-to-br from-emerald-600 to-emerald-700' 
-                : 'bg-gradient-to-br from-slate-600 to-slate-700'
-            }`}>
-              <User className="h-6 w-6 text-white" />
+          <div className="flex items-center space-x-4 flex-1">
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-gradient-to-br from-blue-600 to-blue-700">
+              <Truck className="h-6 w-6 text-white" />
             </div>
-            <div>
-              <h3 className="text-lg font-semibold text-slate-900">{operador.nombre}</h3>
-              <div className="flex items-center space-x-2 mt-1">
-                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium ${
-                  operador.activo ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'
-                }`}>
-                  {operador.activo ? (
-                    <>
-                      <CheckCircle className="h-3 w-3 mr-1" />
-                      Activo
-                    </>
-                  ) : (
-                    <>
-                      <XCircle className="h-3 w-3 mr-1" />
-                      Inactivo
-                    </>
-                  )}
+            <div className="flex-1">
+              <div className="flex items-center space-x-2 mb-1">
+                <h3 className="text-lg font-semibold text-slate-900">{unidad.placas}</h3>
+                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium ${getEstadoColor(unidad.estado)}`}>
+                  {unidad.estado}
                 </span>
-                {isLicenseExpired() && (
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-red-100 text-red-800">
-                    <AlertCircle className="h-3 w-3 mr-1" />
-                    Licencia vencida
-                  </span>
-                )}
-                {!isLicenseExpired() && isLicenseExpiringSoon() && (
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-orange-100 text-orange-800">
-                    <AlertCircle className="h-3 w-3 mr-1" />
-                    Por vencer
-                  </span>
-                )}
               </div>
+              <p className="text-sm text-slate-500">{unidad.marca} {unidad.modelo} {unidad.anio}</p>
             </div>
           </div>
           <div className="relative" ref={menuRef}>
@@ -136,7 +109,7 @@ const OperadorCard = ({ operador, onEdit, onDelete, onViewDetails }) => {
               <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-slate-200 py-2 z-10">
                 <button
                   onClick={() => {
-                    onViewDetails(operador)
+                    onViewDetails(unidad)
                     setShowMenu(false)
                   }}
                   className="flex cursor-pointer items-center w-full px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
@@ -146,7 +119,7 @@ const OperadorCard = ({ operador, onEdit, onDelete, onViewDetails }) => {
                 </button>
                 <button
                   onClick={() => {
-                    onEdit(operador)
+                    onEdit(unidad)
                     setShowMenu(false)
                   }}
                   className="flex cursor-pointer items-center w-full px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
@@ -157,7 +130,7 @@ const OperadorCard = ({ operador, onEdit, onDelete, onViewDetails }) => {
                 <hr className="my-2 border-slate-100" />
                 <button
                   onClick={() => {
-                    onDelete(operador)
+                    onDelete(unidad)
                     setShowMenu(false)
                   }}
                   className="flex cursor-pointer items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
@@ -170,18 +143,42 @@ const OperadorCard = ({ operador, onEdit, onDelete, onViewDetails }) => {
           </div>
         </div>
 
-        <div className="space-y-2">
-          <div className="flex items-center text-sm text-slate-600">
-            <Phone className="h-4 w-4 mr-2 text-slate-400" />
-            {operador.telefono}
+        <div className="space-y-3 mb-4">
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-slate-500 flex items-center">
+              <Settings className="h-3.5 w-3.5 mr-1.5" />
+              Tipo
+            </span>
+            <span className="font-medium text-slate-900">{unidad.tipo}</span>
           </div>
-          <div className="flex items-center text-sm text-slate-600">
-            <CreditCard className="h-4 w-4 mr-2 text-slate-400" />
-            Licencia: {operador.licenciaNumero} - Tipo {operador.licenciaTipo}
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-slate-500 flex items-center">
+              <Gauge className="h-3.5 w-3.5 mr-1.5" />
+              Kilometraje
+            </span>
+            <span className="font-medium text-slate-900">{unidad.kilometrajeActual?.toLocaleString('es-MX')} km</span>
           </div>
-          <div className="flex items-center text-sm text-slate-600">
-            <Calendar className="h-4 w-4 mr-2 text-slate-400" />
-            Vence: {operador.licenciaVencimiento ? new Date(operador.licenciaVencimiento).toLocaleDateString('es-MX') : 'N/A'}
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-slate-500 flex items-center">
+              <Wrench className="h-3.5 w-3.5 mr-1.5" />
+              Último Mto.
+            </span>
+            <span className="font-medium text-slate-900">{formatDate(unidad.fechaUltimoMto)}</span>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between pt-4 border-t border-slate-100">
+          <div className="flex items-center text-xs text-slate-500">
+            <Truck className="h-3.5 w-3.5 mr-1.5" />
+            ID: {unidad.id}
+          </div>
+          <div className="flex items-center text-xs text-blue-600 font-medium">
+            {unidad.estado === 'ACTIVA' ? (
+              <CheckCircle className="h-3.5 w-3.5 mr-1" />
+            ) : (
+              <AlertCircle className="h-3.5 w-3.5 mr-1" />
+            )}
+            {unidad.estado === 'ACTIVA' ? 'Disponible' : 'No disponible'}
           </div>
         </div>
       </div>
@@ -189,16 +186,17 @@ const OperadorCard = ({ operador, onEdit, onDelete, onViewDetails }) => {
   )
 }
 
-const CreateOperadorModal = ({ isOpen, onClose, onSave, users }) => {
+const CreateUnidadModal = ({ isOpen, onClose, onSave }) => {
   const [formData, setFormData] = useState({
-    nombre: '',
-    telefono: '',
-    direccion: '',
-    licenciaNumero: '',
-    licenciaTipo: 'A',
-    licenciaVencimiento: '',
-    usuarioId: '',
-    activo: true
+    placas: '',
+    marca: '',
+    modelo: '',
+    anio: new Date().getFullYear(),
+    tipo: 'TRACTOCAMION',
+    kilometrajeActual: '',
+    fechaUltimoMto: '',
+    estado: 'ACTIVA',
+    creadoPorId: 1
   })
   const [isLoading, setIsLoading] = useState(false)
 
@@ -208,22 +206,25 @@ const CreateOperadorModal = ({ isOpen, onClose, onSave, users }) => {
     try {
       const dataToSend = {
         ...formData,
-        usuarioId: formData.usuarioId ? parseInt(formData.usuarioId) : null
+        anio: parseInt(formData.anio),
+        kilometrajeActual: parseFloat(formData.kilometrajeActual) || 0,
+        creadoPorId: parseInt(formData.creadoPorId)
       }
       await onSave(dataToSend)
       setFormData({
-        nombre: '',
-        telefono: '',
-        direccion: '',
-        licenciaNumero: '',
-        licenciaTipo: 'A',
-        licenciaVencimiento: '',
-        usuarioId: '',
-        activo: true
+        placas: '',
+        marca: '',
+        modelo: '',
+        anio: new Date().getFullYear(),
+        tipo: 'TRACTOCAMION',
+        kilometrajeActual: '',
+        fechaUltimoMto: '',
+        estado: 'ACTIVA',
+        creadoPorId: 1
       })
       onClose()
     } catch (error) {
-      console.error('Error saving operador:', error)
+      console.error('Error saving unidad:', error)
     } finally {
       setIsLoading(false)
     }
@@ -232,146 +233,181 @@ const CreateOperadorModal = ({ isOpen, onClose, onSave, users }) => {
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 backdrop-blur-xs bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 backdrop-blur-xs backdrop-blur-xs bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+      <div className="bg-white rounded-xl shadow-xl max-w-3xl w-full my-8">
         <div className="p-6 border-b border-slate-200">
-          <h2 className="text-2xl font-bold text-slate-900">Nuevo operador</h2>
-          <p className="text-sm text-slate-600 mt-1">Completa la información del operador</p>
+          <h2 className="text-2xl font-bold text-slate-900">Nueva unidad</h2>
+          <p className="text-sm text-slate-600 mt-1">Registra una nueva unidad en el sistema</p>
         </div>
         
-        <form onSubmit={handleSubmit} className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Información Personal */}
-            <div className="md:col-span-2">
-              <h3 className="text-sm font-semibold text-slate-900 mb-4 flex items-center">
-                <User className="h-4 w-4 mr-2" />
-                Información personal
+        <form onSubmit={handleSubmit} className="p-6 max-h-[calc(100vh-200px)] overflow-y-auto">
+          <div className="space-y-6">
+            {/* Información Básica */}
+            <div>
+              <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center">
+                <Truck className="h-5 w-5 mr-2" />
+                Información Básica
               </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Placas *
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.placas}
+                    onChange={(e) => setFormData({ ...formData, placas: e.target.value })}
+                    className="w-full px-4 py-3 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-900"
+                    placeholder="TX-9021-B"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Marca *
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.marca}
+                    onChange={(e) => setFormData({ ...formData, marca: e.target.value })}
+                    className="w-full px-4 py-3 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-900"
+                    placeholder="Freightliner"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Modelo *
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.modelo}
+                    onChange={(e) => setFormData({ ...formData, modelo: e.target.value })}
+                    className="w-full px-4 py-3 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-900"
+                    placeholder="Cascadia"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Año *
+                  </label>
+                  <input
+                    type="number"
+                    value={formData.anio}
+                    onChange={(e) => setFormData({ ...formData, anio: e.target.value })}
+                    className="w-full px-4 py-3 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-900"
+                    min="1900"
+                    max={new Date().getFullYear() + 1}
+                    required
+                  />
+                </div>
+              </div>
             </div>
 
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Nombre completo *
-              </label>
-              <input
-                type="text"
-                value={formData.nombre}
-                onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-                className="w-full px-4 py-3 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-900"
-                required
-              />
-            </div>
-
+            {/* Especificaciones */}
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Teléfono *
-              </label>
-              <input
-                type="tel"
-                value={formData.telefono}
-                onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
-                className="w-full px-4 py-3 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-900"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Usuario asociado
-              </label>
-              <select
-                value={formData.usuarioId}
-                onChange={(e) => setFormData({ ...formData, usuarioId: e.target.value })}
-                className="w-full px-4 py-3 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-900"
-              >
-                <option value="">Sin usuario asociado</option>
-                {users.map((user) => (
-                  <option key={user.id} value={user.id}>
-                    {user.nombre} - {user.email}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Dirección *
-              </label>
-              <textarea
-                value={formData.direccion}
-                onChange={(e) => setFormData({ ...formData, direccion: e.target.value })}
-                className="w-full px-4 py-3 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-900"
-                rows={2}
-                required
-              />
-            </div>
-
-            {/* Información de Licencia */}
-            <div className="md:col-span-2 mt-4">
-              <h3 className="text-sm font-semibold text-slate-900 mb-4 flex items-center">
-                <CreditCard className="h-4 w-4 mr-2" />
-                Información de licencia
+              <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center">
+                <Settings className="h-5 w-5 mr-2" />
+                Especificaciones
               </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Tipo de unidad *
+                  </label>
+                  <select
+                    value={formData.tipo}
+                    onChange={(e) => setFormData({ ...formData, tipo: e.target.value })}
+                    className="w-full px-4 py-3 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-900"
+                    required
+                  >
+                    <option value="TRACTOCAMION">Tractocamión</option>
+                    <option value="CAMION">Camión</option>
+                    <option value="CAMIONETA">Camioneta</option>
+                    <option value="REMOLQUE">Remolque</option>
+                    <option value="SEMIREMOLQUE">Semiremolque</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Estado *
+                  </label>
+                  <select
+                    value={formData.estado}
+                    onChange={(e) => setFormData({ ...formData, estado: e.target.value })}
+                    className="w-full px-4 py-3 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-900"
+                    required
+                  >
+                    <option value="ACTIVA">Activa</option>
+                    <option value="MANTENIMIENTO">Mantenimiento</option>
+                    <option value="INACTIVA">Inactiva</option>
+                  </select>
+                </div>
+              </div>
             </div>
 
+            {/* Mantenimiento */}
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Número de licencia *
-              </label>
-              <input
-                type="text"
-                value={formData.licenciaNumero}
-                onChange={(e) => setFormData({ ...formData, licenciaNumero: e.target.value })}
-                className="w-full px-4 py-3 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-900"
-                required
-              />
+              <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center">
+                <Wrench className="h-5 w-5 mr-2" />
+                Mantenimiento
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Kilometraje actual *
+                  </label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={formData.kilometrajeActual}
+                    onChange={(e) => setFormData({ ...formData, kilometrajeActual: e.target.value })}
+                    className="w-full px-4 py-3 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-900"
+                    placeholder="158000.5"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Fecha último mantenimiento *
+                  </label>
+                  <input
+                    type="date"
+                    value={formData.fechaUltimoMto}
+                    onChange={(e) => setFormData({ ...formData, fechaUltimoMto: e.target.value })}
+                    className="w-full px-4 py-3 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-900"
+                    required
+                  />
+                </div>
+              </div>
             </div>
 
+            {/* Usuario */}
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Tipo de licencia *
-              </label>
-              <select
-                value={formData.licenciaTipo}
-                onChange={(e) => setFormData({ ...formData, licenciaTipo: e.target.value })}
-                className="w-full px-4 py-3 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-900"
-                required
-              >
-                <option value="A">A - Motocicletas</option>
-                <option value="B">B - Automóviles</option>
-                <option value="C">C - Camiones ligeros</option>
-                <option value="D">D - Camiones pesados</option>
-                <option value="E">E - Transporte de pasajeros</option>
-              </select>
-            </div>
-
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Fecha de vencimiento *
-              </label>
-              <input
-                type="date"
-                value={formData.licenciaVencimiento}
-                onChange={(e) => setFormData({ ...formData, licenciaVencimiento: e.target.value })}
-                className="w-full px-4 py-3 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-900"
-                required
-              />
-            </div>
-
-            <div className="md:col-span-2">
-              <label className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  checked={formData.activo}
-                  onChange={(e) => setFormData({ ...formData, activo: e.target.checked })}
-                  className="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500"
-                />
-                <span className="text-sm font-medium text-slate-700">Operador activo</span>
-              </label>
+              <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center">
+                <Calendar className="h-5 w-5 mr-2" />
+                Información de registro
+              </h3>
+              <div className="grid grid-cols-1 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Creado por (ID Usuario) *
+                  </label>
+                  <input
+                    type="number"
+                    value={formData.creadoPorId}
+                    onChange={(e) => setFormData({ ...formData, creadoPorId: e.target.value })}
+                    className="w-full px-4 py-3 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-900"
+                    placeholder="1"
+                    required
+                  />
+                </div>
+              </div>
             </div>
           </div>
 
-          <div className="flex justify-end space-x-3 mt-6">
+          <div className="flex justify-end space-x-3 mt-6 pt-6 border-t border-slate-200">
             <button
               type="button"
               onClick={onClose}
@@ -384,7 +420,7 @@ const CreateOperadorModal = ({ isOpen, onClose, onSave, users }) => {
               disabled={isLoading}
               className="px-6 cursor-pointer py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isLoading ? 'Guardando...' : 'Guardar operador'}
+              {isLoading ? 'Guardando...' : 'Crear unidad'}
             </button>
           </div>
         </form>
@@ -393,33 +429,35 @@ const CreateOperadorModal = ({ isOpen, onClose, onSave, users }) => {
   )
 }
 
-const EditOperadorModal = ({ isOpen, onClose, onSave, operador, users }) => {
+const EditUnidadModal = ({ isOpen, onClose, onSave, unidad }) => {
   const [formData, setFormData] = useState({
-    nombre: '',
-    telefono: '',
-    direccion: '',
-    licenciaNumero: '',
-    licenciaTipo: 'A',
-    licenciaVencimiento: '',
-    usuarioId: '',
-    activo: true
+    placas: '',
+    marca: '',
+    modelo: '',
+    anio: new Date().getFullYear(),
+    tipo: 'TRACTOCAMION',
+    kilometrajeActual: '',
+    fechaUltimoMto: '',
+    estado: 'ACTIVA',
+    creadoPorId: 1
   })
   const [isLoading, setIsLoading] = useState(false)
 
   useEffect(() => {
-    if (operador) {
+    if (unidad) {
       setFormData({
-        nombre: operador.nombre || '',
-        telefono: operador.telefono || '',
-        direccion: operador.direccion || '',
-        licenciaNumero: operador.licenciaNumero || '',
-        licenciaTipo: operador.licenciaTipo || 'A',
-        licenciaVencimiento: operador.licenciaVencimiento || '',
-        usuarioId: operador.usuarioId || '',
-        activo: operador.activo ?? true
+        placas: unidad.placas || '',
+        marca: unidad.marca || '',
+        modelo: unidad.modelo || '',
+        anio: unidad.anio || new Date().getFullYear(),
+        tipo: unidad.tipo || 'TRACTOCAMION',
+        kilometrajeActual: unidad.kilometrajeActual || '',
+        fechaUltimoMto: unidad.fechaUltimoMto || '',
+        estado: unidad.estado || 'ACTIVA',
+        creadoPorId: unidad.creadoPorId || 1
       })
     }
-  }, [operador])
+  }, [unidad])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -427,12 +465,14 @@ const EditOperadorModal = ({ isOpen, onClose, onSave, operador, users }) => {
     try {
       const dataToSend = {
         ...formData,
-        usuarioId: formData.usuarioId ? parseInt(formData.usuarioId) : null
+        anio: parseInt(formData.anio),
+        kilometrajeActual: parseFloat(formData.kilometrajeActual) || 0,
+        creadoPorId: parseInt(formData.creadoPorId)
       }
-      await onSave(operador.id, dataToSend)
+      await onSave(unidad.id, dataToSend)
       onClose()
     } catch (error) {
-      console.error('Error saving operador:', error)
+      console.error('Error saving unidad:', error)
     } finally {
       setIsLoading(false)
     }
@@ -441,146 +481,176 @@ const EditOperadorModal = ({ isOpen, onClose, onSave, operador, users }) => {
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 backdrop-blur-xs bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 backdrop-blur-xs backdrop-blur-xs bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+      <div className="bg-white rounded-xl shadow-xl max-w-3xl w-full my-8">
         <div className="p-6 border-b border-slate-200">
-          <h2 className="text-2xl font-bold text-slate-900">Editar operador</h2>
-          <p className="text-sm text-slate-600 mt-1">Actualiza la información del operador</p>
+          <h2 className="text-2xl font-bold text-slate-900">Editar unidad</h2>
+          <p className="text-sm text-slate-600 mt-1">Actualiza la información de la unidad</p>
         </div>
         
-        <form onSubmit={handleSubmit} className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Información Personal */}
-            <div className="md:col-span-2">
-              <h3 className="text-sm font-semibold text-slate-900 mb-4 flex items-center">
-                <User className="h-4 w-4 mr-2" />
-                Información personal
+        <form onSubmit={handleSubmit} className="p-6 max-h-[calc(100vh-200px)] overflow-y-auto">
+          <div className="space-y-6">
+            {/* Información Básica */}
+            <div>
+              <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center">
+                <Truck className="h-5 w-5 mr-2" />
+                Información Básica
               </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Placas *
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.placas}
+                    onChange={(e) => setFormData({ ...formData, placas: e.target.value })}
+                    className="w-full px-4 py-3 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-900"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Marca *
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.marca}
+                    onChange={(e) => setFormData({ ...formData, marca: e.target.value })}
+                    className="w-full px-4 py-3 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-900"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Modelo *
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.modelo}
+                    onChange={(e) => setFormData({ ...formData, modelo: e.target.value })}
+                    className="w-full px-4 py-3 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-900"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Año *
+                  </label>
+                  <input
+                    type="number"
+                    value={formData.anio}
+                    onChange={(e) => setFormData({ ...formData, anio: e.target.value })}
+                    className="w-full px-4 py-3 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-900"
+                    min="1900"
+                    max={new Date().getFullYear() + 1}
+                    required
+                  />
+                </div>
+              </div>
             </div>
 
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Nombre completo *
-              </label>
-              <input
-                type="text"
-                value={formData.nombre}
-                onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-                className="w-full px-4 py-3 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-900"
-                required
-              />
-            </div>
-
+            {/* Especificaciones */}
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Teléfono *
-              </label>
-              <input
-                type="tel"
-                value={formData.telefono}
-                onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
-                className="w-full px-4 py-3 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-900"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Usuario asociado
-              </label>
-              <select
-                value={formData.usuarioId}
-                onChange={(e) => setFormData({ ...formData, usuarioId: e.target.value })}
-                className="w-full px-4 py-3 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-900"
-              >
-                <option value="">Sin usuario asociado</option>
-                {users.map((user) => (
-                  <option key={user.id} value={user.id}>
-                    {user.nombre} - {user.email}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Dirección *
-              </label>
-              <textarea
-                value={formData.direccion}
-                onChange={(e) => setFormData({ ...formData, direccion: e.target.value })}
-                className="w-full px-4 py-3 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-900"
-                rows={2}
-                required
-              />
-            </div>
-
-            {/* Información de Licencia */}
-            <div className="md:col-span-2 mt-4">
-              <h3 className="text-sm font-semibold text-slate-900 mb-4 flex items-center">
-                <CreditCard className="h-4 w-4 mr-2" />
-                Información de licencia
+              <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center">
+                <Settings className="h-5 w-5 mr-2" />
+                Especificaciones
               </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Tipo de unidad *
+                  </label>
+                  <select
+                    value={formData.tipo}
+                    onChange={(e) => setFormData({ ...formData, tipo: e.target.value })}
+                    className="w-full px-4 py-3 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-900"
+                    required
+                  >
+                    <option value="TRACTOCAMION">Tractocamión</option>
+                    <option value="CAMION">Camión</option>
+                    <option value="CAMIONETA">Camioneta</option>
+                    <option value="REMOLQUE">Remolque</option>
+                    <option value="SEMIREMOLQUE">Semiremolque</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Estado *
+                  </label>
+                  <select
+                    value={formData.estado}
+                    onChange={(e) => setFormData({ ...formData, estado: e.target.value })}
+                    className="w-full px-4 py-3 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-900"
+                    required
+                  >
+                    <option value="ACTIVA">Activa</option>
+                    <option value="MANTENIMIENTO">Mantenimiento</option>
+                    <option value="INACTIVA">Inactiva</option>
+                  </select>
+                </div>
+              </div>
             </div>
 
+            {/* Mantenimiento */}
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Número de licencia *
-              </label>
-              <input
-                type="text"
-                value={formData.licenciaNumero}
-                onChange={(e) => setFormData({ ...formData, licenciaNumero: e.target.value })}
-                className="w-full px-4 py-3 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-900"
-                required
-              />
+              <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center">
+                <Wrench className="h-5 w-5 mr-2" />
+                Mantenimiento
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Kilometraje actual *
+                  </label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={formData.kilometrajeActual}
+                    onChange={(e) => setFormData({ ...formData, kilometrajeActual: e.target.value })}
+                    className="w-full px-4 py-3 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-900"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Fecha último mantenimiento *
+                  </label>
+                  <input
+                    type="date"
+                    value={formData.fechaUltimoMto}
+                    onChange={(e) => setFormData({ ...formData, fechaUltimoMto: e.target.value })}
+                    className="w-full px-4 py-3 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-900"
+                    required
+                  />
+                </div>
+              </div>
             </div>
 
+            {/* Usuario */}
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Tipo de licencia *
-              </label>
-              <select
-                value={formData.licenciaTipo}
-                onChange={(e) => setFormData({ ...formData, licenciaTipo: e.target.value })}
-                className="w-full px-4 py-3 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-900"
-                required
-              >
-                <option value="A">A - Motocicletas</option>
-                <option value="B">B - Automóviles</option>
-                <option value="C">C - Camiones ligeros</option>
-                <option value="D">D - Camiones pesados</option>
-                <option value="E">E - Transporte de pasajeros</option>
-              </select>
-            </div>
-
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Fecha de vencimiento *
-              </label>
-              <input
-                type="date"
-                value={formData.licenciaVencimiento}
-                onChange={(e) => setFormData({ ...formData, licenciaVencimiento: e.target.value })}
-                className="w-full px-4 py-3 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-900"
-                required
-              />
-            </div>
-
-            <div className="md:col-span-2">
-              <label className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  checked={formData.activo}
-                  onChange={(e) => setFormData({ ...formData, activo: e.target.checked })}
-                  className="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500"
-                />
-                <span className="text-sm font-medium text-slate-700">Operador activo</span>
-              </label>
+              <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center">
+                <Calendar className="h-5 w-5 mr-2" />
+                Información de registro
+              </h3>
+              <div className="grid grid-cols-1 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Creado por (ID Usuario) *
+                  </label>
+                  <input
+                    type="number"
+                    value={formData.creadoPorId}
+                    onChange={(e) => setFormData({ ...formData, creadoPorId: e.target.value })}
+                    className="w-full px-4 py-3 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-900"
+                    required
+                  />
+                </div>
+              </div>
             </div>
           </div>
 
-          <div className="flex justify-end space-x-3 mt-6">
+          <div className="flex justify-end space-x-3 mt-6 pt-6 border-t border-slate-200">
             <button
               type="button"
               onClick={onClose}
@@ -593,7 +663,7 @@ const EditOperadorModal = ({ isOpen, onClose, onSave, operador, users }) => {
               disabled={isLoading}
               className="px-6 cursor-pointer py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isLoading ? 'Actualizando...' : 'Actualizar operador'}
+              {isLoading ? 'Actualizando...' : 'Actualizar unidad'}
             </button>
           </div>
         </form>
@@ -602,120 +672,123 @@ const EditOperadorModal = ({ isOpen, onClose, onSave, operador, users }) => {
   )
 }
 
-const ViewOperadorModal = ({ isOpen, onClose, operador }) => {
-  if (!isOpen || !operador) return null
+const ViewUnidadModal = ({ isOpen, onClose, unidad }) => {
+  const formatDate = (date) => {
+    if (!date) return 'N/A'
+    return new Date(date).toLocaleDateString('es-MX', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    })
+  }
+
+  const getEstadoBadge = (estado) => {
+    const styles = {
+      ACTIVA: 'bg-emerald-100 text-emerald-800 border-emerald-200',
+      MANTENIMIENTO: 'bg-amber-100 text-amber-800 border-amber-200',
+      INACTIVA: 'bg-red-100 text-red-800 border-red-200'
+    }
+    return styles[estado] || 'bg-slate-100 text-slate-800 border-slate-200'
+  }
+
+  if (!isOpen || !unidad) return null
 
   return (
-    <div className="fixed inset-0 backdrop-blur-xs bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full">
+    <div className="fixed inset-0 backdrop-blur-xs backdrop-blur-xs bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+      <div className="bg-white rounded-xl shadow-xl max-w-3xl w-full my-8">
         <div className="p-6 border-b border-slate-200">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-2xl font-bold text-slate-900">Detalles del operador</h2>
-              <p className="text-sm text-slate-600 mt-1">Información completa del operador</p>
+              <h2 className="text-2xl font-bold text-slate-900">Detalles de la unidad</h2>
+              <p className="text-sm text-slate-600 mt-1">Información completa de la unidad</p>
             </div>
-            <div className={`w-14 h-14 rounded-xl flex items-center justify-center ${
-              operador.activo 
-                ? 'bg-gradient-to-br from-emerald-600 to-emerald-700' 
-                : 'bg-gradient-to-br from-slate-600 to-slate-700'
-            }`}>
-              <User className="h-7 w-7 text-white" />
+            <div className="w-14 h-14 rounded-xl flex items-center justify-center bg-gradient-to-br from-blue-600 to-blue-700">
+              <Truck className="h-7 w-7 text-white" />
             </div>
           </div>
         </div>
         
-        <div className="p-6 space-y-6">
-          {/* Información Personal */}
+        <div className="p-6 space-y-6 max-h-[calc(100vh-250px)] overflow-y-auto">
+          {/* Información General */}
           <div>
             <h3 className="text-sm font-semibold text-slate-900 mb-4 flex items-center">
-              <User className="h-4 w-4 mr-2" />
-              Información personal
+              <Truck className="h-4 w-4 mr-2" />
+              Información General
             </h3>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               <div>
-                <label className="text-xs font-medium text-slate-500">Nombre completo</label>
-                <p className="text-sm text-slate-900 mt-1">{operador.nombre}</p>
+                <label className="text-xs font-medium text-slate-500">Placas</label>
+                <p className="text-sm text-slate-900 mt-1 font-semibold">{unidad.placas}</p>
               </div>
               <div>
-                <label className="text-xs font-medium text-slate-500">Teléfono</label>
-                <p className="text-sm text-slate-900 mt-1">{operador.telefono}</p>
+                <label className="text-xs font-medium text-slate-500">Marca</label>
+                <p className="text-sm text-slate-900 mt-1">{unidad.marca}</p>
               </div>
-              <div className="col-span-2">
-                <label className="text-xs font-medium text-slate-500">Dirección</label>
-                <p className="text-sm text-slate-900 mt-1">{operador.direccion}</p>
+              <div>
+                <label className="text-xs font-medium text-slate-500">Modelo</label>
+                <p className="text-sm text-slate-900 mt-1">{unidad.modelo}</p>
+              </div>
+              <div>
+                <label className="text-xs font-medium text-slate-500">Año</label>
+                <p className="text-sm text-slate-900 mt-1">{unidad.anio}</p>
+              </div>
+              <div>
+                <label className="text-xs font-medium text-slate-500">Tipo</label>
+                <p className="text-sm text-slate-900 mt-1">{unidad.tipo}</p>
+              </div>
+              <div>
+                <label className="text-xs font-medium text-slate-500">Estado</label>
+                <p className="text-sm mt-1">
+                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium border ${getEstadoBadge(unidad.estado)}`}>
+                    {unidad.estado}
+                  </span>
+                </p>
               </div>
             </div>
           </div>
 
-          {/* Información de Licencia */}
+          {/* Información de Mantenimiento */}
           <div>
             <h3 className="text-sm font-semibold text-slate-900 mb-4 flex items-center">
-              <CreditCard className="h-4 w-4 mr-2" />
-              Información de licencia
+              <Wrench className="h-4 w-4 mr-2" />
+              Mantenimiento
             </h3>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-xs font-medium text-slate-500">Número de licencia</label>
-                <p className="text-sm text-slate-900 mt-1">{operador.licenciaNumero}</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="bg-slate-50 p-3 rounded-lg">
+                <label className="text-xs font-medium text-slate-500 flex items-center">
+                  <Gauge className="h-3 w-3 mr-1" />
+                  Kilometraje Actual
+                </label>
+                <p className="text-lg text-slate-900 mt-1 font-bold">{unidad.kilometrajeActual?.toLocaleString('es-MX')} km</p>
               </div>
-              <div>
-                <label className="text-xs font-medium text-slate-500">Tipo</label>
-                <p className="text-sm text-slate-900 mt-1">Tipo {operador.licenciaTipo}</p>
-              </div>
-              <div>
-                <label className="text-xs font-medium text-slate-500">Fecha de vencimiento</label>
-                <p className="text-sm text-slate-900 mt-1">
-                  {operador.licenciaVencimiento ? new Date(operador.licenciaVencimiento).toLocaleDateString('es-MX', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                  }) : 'N/A'}
-                </p>
-              </div>
-              <div>
-                <label className="text-xs font-medium text-slate-500">Estado</label>
-                <div className="mt-1">
-                  <span className={`inline-flex items-center px-3 py-1 rounded-md text-xs font-medium ${
-                    operador.activo ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'
-                  }`}>
-                    {operador.activo ? (
-                      <>
-                        <CheckCircle className="h-3 w-3 mr-1" />
-                        Activo
-                      </>
-                    ) : (
-                      <>
-                        <XCircle className="h-3 w-3 mr-1" />
-                        Inactivo
-                      </>
-                    )}
-                  </span>
-                </div>
+              <div className="bg-slate-50 p-3 rounded-lg">
+                <label className="text-xs font-medium text-slate-500 flex items-center">
+                  <Calendar className="h-3 w-3 mr-1" />
+                  Último Mantenimiento
+                </label>
+                <p className="text-sm text-slate-900 mt-1 font-semibold">{formatDate(unidad.fechaUltimoMto)}</p>
               </div>
             </div>
           </div>
 
           {/* Información del Sistema */}
-          {operador.id && (
-            <div>
-              <h3 className="text-sm font-semibold text-slate-900 mb-4 flex items-center">
-                <Shield className="h-4 w-4 mr-2" />
-                Información del sistema
-              </h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-xs font-medium text-slate-500">ID de Operador</label>
-                  <p className="text-sm text-slate-900 mt-1">#{operador.id}</p>
-                </div>
-                {operador.usuarioId && (
-                  <div>
-                    <label className="text-xs font-medium text-slate-500">Usuario asociado</label>
-                    <p className="text-sm text-slate-900 mt-1">ID: {operador.usuarioId}</p>
-                  </div>
-                )}
+          <div>
+            <h3 className="text-sm font-semibold text-slate-900 mb-4 flex items-center">
+              <Settings className="h-4 w-4 mr-2" />
+              Información del Sistema
+            </h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-xs font-medium text-slate-500">ID de la Unidad</label>
+                <p className="text-sm text-slate-900 mt-1">#{unidad.id}</p>
+              </div>
+              <div>
+                <label className="text-xs font-medium text-slate-500">Creado por (ID Usuario)</label>
+                <p className="text-sm text-slate-900 mt-1">#{unidad.creadoPorId}</p>
               </div>
             </div>
-          )}
+          </div>
         </div>
 
         <div className="p-6 border-t border-slate-200">
@@ -731,20 +804,20 @@ const ViewOperadorModal = ({ isOpen, onClose, operador }) => {
   )
 }
 
-const ConfirmDeleteModal = ({ isOpen, onClose, onConfirm, operadorName }) => {
+const ConfirmDeleteModal = ({ isOpen, onClose, onConfirm, unidadPlacas }) => {
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 backdrop-blur-xs bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 backdrop-blur-xs backdrop-blur-xs bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
         <div className="p-6">
           <div className="flex items-center justify-center w-12 h-12 bg-red-100 rounded-xl mb-4">
             <Trash2 className="h-6 w-6 text-red-600" />
           </div>
-          <h2 className="text-xl font-bold text-slate-900 mb-2">Eliminar operador</h2>
+          <h2 className="text-xl font-bold text-slate-900 mb-2">Eliminar unidad</h2>
           <p className="text-slate-600 mb-6">
-            ¿Estás seguro de que deseas eliminar a <span className="font-semibold">{operadorName}</span>? 
-            Esta acción no se puede deshacer.
+            ¿Estás seguro de que deseas eliminar la unidad con placas <span className="font-semibold">{unidadPlacas}</span>? 
+            Esta acción no se puede deshacer y se perderán todos los registros asociados.
           </p>
           <div className="flex space-x-3">
             <button
@@ -766,306 +839,268 @@ const ConfirmDeleteModal = ({ isOpen, onClose, onConfirm, operadorName }) => {
   )
 }
 
-const OperadoresPage = () => {
-  const [operadores, setOperadores] = useState([])
-  const [users, setUsers] = useState([])
-  const [loading, setLoading] = useState(true)
+const UnidadesPage = () => {
+  const [unidades, setUnidades] = useState([])
+  const [filteredUnidades, setFilteredUnidades] = useState([])
   const [searchTerm, setSearchTerm] = useState('')
-  const [filterStatus, setFilterStatus] = useState('all')
+  const [isLoading, setIsLoading] = useState(true)
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
   const [showViewModal, setShowViewModal] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
-  const [selectedOperador, setSelectedOperador] = useState(null)
-  const [operadorToDelete, setOperadorToDelete] = useState(null)
-  const [stats, setStats] = useState({
-    total: 0,
-    activos: 0,
-    inactivos: 0,
-    licenciasVencidas: 0
-  })
-
-  const loadOperadores = async () => {
-    try {
-      const response = await operadoresService.getOperadores(0, 100)
-      const operadoresData = response.content || []
-      setOperadores(operadoresData)
-      
-      // Calcular licencias vencidas
-      const today = new Date()
-      const licenciasVencidas = operadoresData.filter(op => {
-        if (!op.licenciaVencimiento) return false
-        const expirationDate = new Date(op.licenciaVencimiento)
-        return expirationDate < today
-      }).length
-
-      setStats({
-        total: response.totalElements || operadoresData.length,
-        activos: operadoresData.filter(op => op.activo).length,
-        inactivos: operadoresData.filter(op => !op.activo).length,
-        licenciasVencidas
-      })
-    } catch (error) {
-      console.error('Error loading operadores:', error)
-      toast.error('Error al cargar operadores')
-    }
-  }
-
-  const loadUsers = async () => {
-    try {
-      const response = await usersService.getUsers(0, 100)
-      setUsers(response.content || [])
-    } catch (error) {
-      console.error('Error loading users:', error)
-    }
-  }
+  const [selectedUnidad, setSelectedUnidad] = useState(null)
 
   useEffect(() => {
-    const loadInitialData = async () => {
-      try {
-        setLoading(true)
-        await Promise.all([loadOperadores(), loadUsers()])
-      } catch (error) {
-        console.error('Error loading initial data:', error)
-        toast.error('Error al cargar datos iniciales')
-      } finally {
-        setLoading(false)
-      }
-    }
-    
-    loadInitialData()
+    fetchUnidades()
   }, [])
 
-  const handleCreateOperador = async (operadorData) => {
+  useEffect(() => {
+    if (searchTerm.trim() === '') {
+      setFilteredUnidades(unidades)
+    } else {
+      const filtered = unidades.filter(unidad =>
+        unidad.placas?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        unidad.marca?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        unidad.modelo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        unidad.tipo?.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+      setFilteredUnidades(filtered)
+    }
+  }, [searchTerm, unidades])
+
+  const fetchUnidades = async () => {
     try {
-      await operadoresService.createOperador(operadorData)
-      toast.success('Operador creado exitosamente')
-      loadOperadores()
+      setIsLoading(true)
+      const response = await unidadesService.getAll()
+      // Manejar diferentes formatos de respuesta de la API
+      const data = Array.isArray(response) ? response : (response.content || response.data || [])
+      setUnidades(data)
+      setFilteredUnidades(data)
     } catch (error) {
-      toast.error(error.message || 'Error al crear operador')
+      console.error('Error fetching unidades:', error)
+      toast.error('Error al cargar las unidades')
+      setUnidades([])
+      setFilteredUnidades([])
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleCreate = async (data) => {
+    try {
+      await unidadesService.create(data)
+      toast.success('Unidad creada exitosamente')
+      fetchUnidades()
+    } catch (error) {
+      console.error('Error creating unidad:', error)
+      toast.error('Error al crear la unidad')
       throw error
     }
   }
 
-  const handleEditOperador = async (operador) => {
+  const handleEdit = async (id, data) => {
     try {
-      const fullOperador = await operadoresService.getOperadorById(operador.id)
-      setSelectedOperador(fullOperador)
-      setShowEditModal(true)
+      await unidadesService.update(id, data)
+      toast.success('Unidad actualizada exitosamente')
+      fetchUnidades()
     } catch (error) {
-      toast.error('Error al cargar información del operador')
-    }
-  }
-
-  const handleUpdateOperador = async (operadorId, operadorData) => {
-    try {
-      await operadoresService.updateOperador(operadorId, operadorData)
-      toast.success('Operador actualizado exitosamente')
-      setShowEditModal(false)
-      setSelectedOperador(null)
-      loadOperadores()
-    } catch (error) {
-      toast.error(error.message || 'Error al actualizar operador')
+      console.error('Error updating unidad:', error)
+      toast.error('Error al actualizar la unidad')
       throw error
     }
   }
 
-  const handleDeleteOperador = async (operador) => {
-    setOperadorToDelete(operador)
-    setShowDeleteModal(true)
-  }
-
-  const confirmDelete = async () => {
-    if (!operadorToDelete) return
-
+  const handleDelete = async () => {
     try {
-      await operadoresService.deleteOperador(operadorToDelete.id)
-      toast.success(`Operador ${operadorToDelete.nombre} eliminado`)
+      await unidadesService.delete(selectedUnidad.id)
+      toast.success('Unidad eliminada exitosamente')
       setShowDeleteModal(false)
-      setOperadorToDelete(null)
-      loadOperadores()
+      setSelectedUnidad(null)
+      fetchUnidades()
     } catch (error) {
-      toast.error(error.message || 'Error al eliminar operador')
+      console.error('Error deleting unidad:', error)
+      toast.error('Error al eliminar la unidad')
     }
   }
 
-  const handleViewDetails = async (operador) => {
-    try {
-      const fullOperador = await operadoresService.getOperadorById(operador.id)
-      setSelectedOperador(fullOperador)
-      setShowViewModal(true)
-    } catch (error) {
-      toast.error('Error al cargar detalles del operador')
+  const calculateStats = () => {
+    // Asegurarse de que unidades sea un array
+    const unidadesArray = Array.isArray(unidades) ? unidades : []
+    const totalUnidades = unidadesArray.length
+    const activas = unidadesArray.filter(u => u.estado === 'ACTIVA').length
+    const enMantenimiento = unidadesArray.filter(u => u.estado === 'MANTENIMIENTO').length
+    const inactivas = unidadesArray.filter(u => u.estado === 'INACTIVA').length
+
+    return {
+      totalUnidades,
+      activas,
+      enMantenimiento,
+      inactivas
     }
   }
 
-  const filteredOperadores = operadores.filter(operador => {
-    const matchesSearch = operador.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         operador.telefono.includes(searchTerm) ||
-                         operador.licenciaNumero.toLowerCase().includes(searchTerm.toLowerCase())
-    
-    let matchesStatus = true
-    if (filterStatus === 'activo') {
-      matchesStatus = operador.activo === true
-    } else if (filterStatus === 'inactivo') {
-      matchesStatus = operador.activo === false
-    }
-    
-    return matchesSearch && matchesStatus
-  })
+  const stats = calculateStats()
 
-  if (loading) {
+  if (isLoading) {
     return (
-      <div className="p-6 bg-slate-50 min-h-screen">
-        <div className="animate-pulse">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="bg-slate-200 h-32 rounded-xl"></div>
-            ))}
-          </div>
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-slate-600">Cargando unidades...</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="p-6 bg-slate-50 min-h-screen">
-      {/* Header */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4 md:p-6 lg:p-8">
+      <div className="max-w-7xl mx-auto space-y-6">
+        {/* Header */}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-slate-900">Gestión de operadores</h1>
-            <p className="text-slate-600 mt-2">Administra los operadores y sus licencias</p>
+            <h1 className="text-3xl font-bold text-slate-900 flex items-center">
+              <Truck className="h-8 w-8 mr-3 text-blue-600" />
+              Gestión de Unidades
+            </h1>
+            <p className="text-slate-600 mt-1">Administra el inventario de vehículos y su estado</p>
           </div>
           <button
             onClick={() => setShowCreateModal(true)}
-            className="flex cursor-pointer items-center space-x-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium shadow-sm"
+            className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all shadow-lg hover:shadow-xl cursor-pointer font-medium"
           >
-            <UserPlus className="h-5 w-5" />
-            <span>Nuevo operador</span>
+            <Plus className="h-5 w-5 mr-2" />
+            Nueva unidad
           </button>
         </div>
-      </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <StatCard
-          title="Total operadores"
-          value={stats.total}
-          icon={UsersIcon}
-          color="bg-blue-600"
-          description="Operadores registrados"
-        />
-        <StatCard
-          title="Operadores activos"
-          value={stats.activos}
-          icon={CheckCircle}
-          color="bg-emerald-600"
-          description="Disponibles"
-        />
-        <StatCard
-          title="Operadores inactivos"
-          value={stats.inactivos}
-          icon={XCircle}
-          color="bg-slate-600"
-          description="No disponibles"
-        />
-        <StatCard
-          title="Licencias vencidas"
-          value={stats.licenciasVencidas}
-          icon={AlertCircle}
-          color="bg-red-600"
-          description="Requieren renovación"
-        />
-      </div>
+        {/* Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <StatCard
+            title="Total Unidades"
+            value={stats.totalUnidades}
+            icon={Truck}
+            color="bg-blue-600"
+            description="Registradas en el sistema"
+          />
+          <StatCard
+            title="Unidades Activas"
+            value={stats.activas}
+            icon={CheckCircle}
+            color="bg-emerald-600"
+            description="Disponibles para uso"
+          />
+          <StatCard
+            title="En Mantenimiento"
+            value={stats.enMantenimiento}
+            icon={Wrench}
+            color="bg-amber-600"
+            description="En reparación"
+          />
+          <StatCard
+            title="Inactivas"
+            value={stats.inactivas}
+            icon={AlertCircle}
+            color="bg-red-600"
+            description="Fuera de servicio"
+          />
+        </div>
 
-      {/* Filters */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Search */}
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
           <div className="relative">
-            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 h-5 w-5" />
+            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400" />
             <input
               type="text"
-              placeholder="Buscar por nombre, teléfono o licencia..."
+              placeholder="Buscar por placas, marca, modelo o tipo..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-700 placeholder-slate-400"
+              className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-900"
             />
           </div>
-          <div className="relative">
-            <Filter className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 h-5 w-5" />
-            <select
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
-              className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-700"
-            >
-              <option value="all">Todos los estados</option>
-              <option value="activo">Activos</option>
-              <option value="inactivo">Inactivos</option>
-            </select>
+        </div>
+
+        {/* Unidades List */}
+        {filteredUnidades.length === 0 ? (
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-12 text-center">
+            <Truck className="h-12 w-12 text-slate-300 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-slate-900 mb-2">
+              {searchTerm ? 'No se encontraron unidades' : 'No hay unidades registradas'}
+            </h3>
+            <p className="text-slate-600 mb-6">
+              {searchTerm
+                ? 'Intenta con otros términos de búsqueda'
+                : 'Comienza registrando tu primera unidad'}
+            </p>
+            {!searchTerm && (
+              <button
+                onClick={() => setShowCreateModal(true)}
+                className="inline-flex items-center px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors cursor-pointer font-medium"
+              >
+                <Plus className="h-5 w-5 mr-2" />
+                Crear unidad
+              </button>
+            )}
           </div>
-        </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filteredUnidades.map((unidad) => (
+              <UnidadCard
+                key={unidad.id}
+                unidad={unidad}
+                onEdit={(unidad) => {
+                  setSelectedUnidad(unidad)
+                  setShowEditModal(true)
+                }}
+                onDelete={(unidad) => {
+                  setSelectedUnidad(unidad)
+                  setShowDeleteModal(true)
+                }}
+                onViewDetails={(unidad) => {
+                  setSelectedUnidad(unidad)
+                  setShowViewModal(true)
+                }}
+              />
+            ))}
+          </div>
+        )}
       </div>
-
-      {/* Operadores Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredOperadores.map((operador) => (
-          <OperadorCard
-            key={operador.id}
-            operador={operador}
-            onEdit={handleEditOperador}
-            onDelete={handleDeleteOperador}
-            onViewDetails={handleViewDetails}
-          />
-        ))}
-      </div>
-
-      {filteredOperadores.length === 0 && (
-        <div className="text-center py-12">
-          <User className="h-12 w-12 text-slate-300 mx-auto mb-4" />
-          <p className="text-slate-500">No se encontraron operadores</p>
-        </div>
-      )}
 
       {/* Modals */}
-      <CreateOperadorModal
+      <CreateUnidadModal
         isOpen={showCreateModal}
         onClose={() => setShowCreateModal(false)}
-        onSave={handleCreateOperador}
-        users={users}
+        onSave={handleCreate}
       />
 
-      <EditOperadorModal
+      <EditUnidadModal
         isOpen={showEditModal}
         onClose={() => {
           setShowEditModal(false)
-          setSelectedOperador(null)
+          setSelectedUnidad(null)
         }}
-        onSave={handleUpdateOperador}
-        operador={selectedOperador}
-        users={users}
+        onSave={handleEdit}
+        unidad={selectedUnidad}
       />
 
-      <ViewOperadorModal
+      <ViewUnidadModal
         isOpen={showViewModal}
         onClose={() => {
           setShowViewModal(false)
-          setSelectedOperador(null)
+          setSelectedUnidad(null)
         }}
-        operador={selectedOperador}
+        unidad={selectedUnidad}
       />
 
       <ConfirmDeleteModal
         isOpen={showDeleteModal}
         onClose={() => {
           setShowDeleteModal(false)
-          setOperadorToDelete(null)
+          setSelectedUnidad(null)
         }}
-        onConfirm={confirmDelete}
-        operadorName={operadorToDelete?.nombre}
+        onConfirm={handleDelete}
+        unidadPlacas={selectedUnidad?.placas}
       />
     </div>
   )
 }
-
-export default OperadoresPage;
+export default UnidadesPage;

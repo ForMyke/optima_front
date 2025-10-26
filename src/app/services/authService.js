@@ -73,11 +73,21 @@ export const authService = {
       // Guardar token
       localStorage.setItem('token', data.token)
       
+      // Normalizar el rol: extraer el primer rol y quitar el prefijo "ROLE_"
+      let userRole = data.rol
+      if (Array.isArray(userRole)) {
+        userRole = userRole[0] // Tomar el primer rol del array
+      }
+      if (typeof userRole === 'string' && userRole.startsWith('ROLE_')) {
+        userRole = userRole.replace('ROLE_', '') // Quitar el prefijo "ROLE_"
+      }
+      
       // Guardar información del usuario
       const userData = {
+        id: data.id || data.userId,
         email: data.email || data.correo,
         nombre: data.nombre,
-        rol: data.rol,
+        rol: userRole, // Rol normalizado sin prefijo
       }
       localStorage.setItem('user', JSON.stringify(userData))
       localStorage.setItem('isAuthenticated', 'true')

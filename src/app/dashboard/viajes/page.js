@@ -25,6 +25,8 @@ import toast from 'react-hot-toast'
 import { viajesService } from '@/app/services/viajesService'
 import { operadoresService } from '@/app/services/operadoresService'
 import { clientsService } from '@/app/services/clientsService'
+import { unidadesService } from '@/app/services/unidadesService'
+import { authService } from '@/app/services/authService'
 
 const ESTADOS = {
   PENDIENTE: { label: 'Pendiente', color: 'bg-yellow-100 text-yellow-800', icon: Clock },
@@ -58,7 +60,7 @@ const StatCard = ({ title, value, icon: Icon, color, description }) => (
   </div>
 )
 
-const ViajeCard = ({ viaje, onEdit, onDelete, onViewDetails }) => {
+const ViajeCard = ({ viaje, onEdit, onDelete, onViewDetails, operadores, clientes, unidades }) => {
   const [showMenu, setShowMenu] = useState(false)
   const menuRef = useRef(null)
 
@@ -81,6 +83,30 @@ const ViajeCard = ({ viaje, onEdit, onDelete, onViewDetails }) => {
   const estadoInfo = ESTADOS[viaje.estado] || ESTADOS.PENDIENTE
   const tipoInfo = TIPOS_VIAJE[viaje.tipoViaje] || TIPOS_VIAJE.LOCAL
   const EstadoIcon = estadoInfo.icon
+
+  // Buscar operador en el array si solo tenemos el ID
+  let operadorNombre = viaje.operador?.nombre
+  if (!operadorNombre && (viaje.idOperador || viaje.operadorId)) {
+    const operadorId = viaje.idOperador || viaje.operadorId
+    const operadorEncontrado = operadores?.find(op => op.id === operadorId)
+    operadorNombre = operadorEncontrado?.nombre
+  }
+
+  // Buscar cliente en el array si solo tenemos el ID
+  let clienteNombre = viaje.cliente?.nombre
+  if (!clienteNombre && (viaje.idCliente || viaje.clienteId)) {
+    const clienteId = viaje.idCliente || viaje.clienteId
+    const clienteEncontrado = clientes?.find(cl => cl.id === clienteId)
+    clienteNombre = clienteEncontrado?.nombre
+  }
+
+  // Buscar unidad en el array si solo tenemos el ID
+  let unidadNumero = viaje.unidad?.numeroEconomico
+  if (!unidadNumero && (viaje.idUnidad || viaje.unidadId)) {
+    const unidadId = viaje.idUnidad || viaje.unidadId
+    const unidadEncontrada = unidades?.find(un => un.id === unidadId)
+    unidadNumero = unidadEncontrada?.numeroEconomico || unidadEncontrada?.placas
+  }
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-slate-200 hover:shadow-md transition-all">
@@ -156,7 +182,7 @@ const ViajeCard = ({ viaje, onEdit, onDelete, onViewDetails }) => {
               Operador:
             </span>
             <span className="font-medium text-slate-900">
-              {viaje.operador?.nombre || `ID: ${viaje.operadorId}`}
+              {operadorNombre || 'No asignado'}
             </span>
           </div>
           <div className="flex items-center justify-between text-sm">
@@ -165,7 +191,7 @@ const ViajeCard = ({ viaje, onEdit, onDelete, onViewDetails }) => {
               Cliente:
             </span>
             <span className="font-medium text-slate-900">
-              {viaje.cliente?.nombre || `ID: ${viaje.clienteId}`}
+              {clienteNombre || 'No asignado'}
             </span>
           </div>
           <div className="flex items-center justify-between text-sm">
@@ -174,7 +200,7 @@ const ViajeCard = ({ viaje, onEdit, onDelete, onViewDetails }) => {
               Unidad:
             </span>
             <span className="font-medium text-slate-900">
-              {viaje.unidad?.numeroEconomico || `ID: ${viaje.unidadId}`}
+              {unidadNumero || 'No asignada'}
             </span>
           </div>
         </div>
@@ -213,9 +239,31 @@ const CreateViajeModal = ({ isOpen, onClose, onSave, operadores, clientes, unida
     creadoPor: ''
   })
   const [isLoading, setIsLoading] = useState(false)
+  const [currentUser, setCurrentUser] = useState(null)
+
+  // Obtener usuario autenticado al abrir el modal
+  useEffect(() => {
+    if (isOpen) {
+      const user = authService.getUser()
+      setCurrentUser(user)
+      if (user?.id) {
+        setFormData(prev => ({ 
+          ...prev, 
+          creadoPor: user.id.toString(),
+          responsableLogistica: user.id.toString()
+        }))
+      }
+    }
+  }, [isOpen])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    
+    if (!currentUser?.id) {
+      toast.error('No se pudo obtener el usuario autenticado')
+      return
+    }
+    
     setIsLoading(true)
     try {
       await onSave({
@@ -234,7 +282,7 @@ const CreateViajeModal = ({ isOpen, onClose, onSave, operadores, clientes, unida
         tipo: formData.tipo,
         responsableLogistica: parseInt(formData.responsableLogistica),
         evidenciaUrl: formData.evidenciaUrl || null,
-        creadoPor: parseInt(formData.creadoPor)
+        creadoPor: currentUser.id
       })
       setFormData({
         idUnidad: '',
@@ -322,14 +370,19 @@ const CreateViajeModal = ({ isOpen, onClose, onSave, operadores, clientes, unida
                 <label className="block text-sm font-medium text-slate-700 mb-2">
                   Unidad *
                 </label>
-                <input
-                  type="number"
+                <select
                   value={formData.idUnidad}
                   onChange={(e) => setFormData({ ...formData, idUnidad: e.target.value })}
                   className="w-full px-4 py-3 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-900"
-                  placeholder="ID de unidad"
                   required
-                />
+                >
+                  <option value="">Selecciona una unidad</option>
+                  {unidades && unidades.map((unidad) => (
+                    <option key={unidad.id} value={unidad.id}>
+                      {unidad.numeroEconomico} - {unidad.placas}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
           </div>
@@ -498,36 +551,8 @@ const CreateViajeModal = ({ isOpen, onClose, onSave, operadores, clientes, unida
               <AlertCircle className="h-5 w-5 mr-2 text-blue-600" />
               Información Adicional
             </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Responsable de logística (ID Usuario) *
-                </label>
-                <input
-                  type="number"
-                  value={formData.responsableLogistica}
-                  onChange={(e) => setFormData({ ...formData, responsableLogistica: e.target.value })}
-                  className="w-full px-4 py-3 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-900"
-                  placeholder="1"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Creado por (ID Usuario) *
-                </label>
-                <input
-                  type="number"
-                  value={formData.creadoPor}
-                  onChange={(e) => setFormData({ ...formData, creadoPor: e.target.value })}
-                  className="w-full px-4 py-3 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-900"
-                  placeholder="1"
-                  required
-                />
-              </div>
-
-              <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-slate-700 mb-2">
                   Observaciones
                 </label>
@@ -540,7 +565,7 @@ const CreateViajeModal = ({ isOpen, onClose, onSave, operadores, clientes, unida
                 />
               </div>
 
-              <div className="md:col-span-2">
+              <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">
                   URL de evidencia (opcional)
                 </label>
@@ -551,6 +576,20 @@ const CreateViajeModal = ({ isOpen, onClose, onSave, operadores, clientes, unida
                   className="w-full px-4 py-3 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-900"
                   placeholder="https://ejemplo.com/evidencia.jpg"
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Registrado por
+                </label>
+                <div className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg text-slate-700">
+                  <div className="flex items-center">
+                    <User className="h-4 w-4 mr-2 text-slate-500" />
+                    <span className="font-medium">{currentUser?.nombre || 'Cargando...'}</span>
+                    <span className="ml-2 text-sm text-slate-500">({currentUser?.email})</span>
+                  </div>
+                </div>
+                <p className="text-xs text-slate-500 mt-1">Usuario autenticado actualmente</p>
               </div>
             </div>
           </div>
@@ -565,7 +604,7 @@ const CreateViajeModal = ({ isOpen, onClose, onSave, operadores, clientes, unida
             </button>
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={isLoading || !currentUser}
               className="px-6 cursor-pointer py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? 'Guardando...' : 'Crear viaje'}
@@ -577,7 +616,7 @@ const CreateViajeModal = ({ isOpen, onClose, onSave, operadores, clientes, unida
   )
 }
 
-const EditViajeModal = ({ isOpen, onClose, onSave, viaje, operadores, clientes }) => {
+const EditViajeModal = ({ isOpen, onClose, onSave, viaje, operadores, clientes, unidades }) => {
   const [formData, setFormData] = useState({
     idUnidad: '',
     idOperador: '',
@@ -597,6 +636,15 @@ const EditViajeModal = ({ isOpen, onClose, onSave, viaje, operadores, clientes }
     creadoPor: ''
   })
   const [isLoading, setIsLoading] = useState(false)
+  const [currentUser, setCurrentUser] = useState(null)
+
+  // Obtener usuario autenticado al abrir el modal
+  useEffect(() => {
+    if (isOpen) {
+      const user = authService.getUser()
+      setCurrentUser(user)
+    }
+  }, [isOpen])
 
   useEffect(() => {
     if (viaje) {
@@ -623,6 +671,12 @@ const EditViajeModal = ({ isOpen, onClose, onSave, viaje, operadores, clientes }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    
+    if (!currentUser?.id) {
+      toast.error('No se pudo obtener el usuario autenticado')
+      return
+    }
+    
     setIsLoading(true)
     try {
       await onSave(viaje.id, {
@@ -641,7 +695,7 @@ const EditViajeModal = ({ isOpen, onClose, onSave, viaje, operadores, clientes }
         tipo: formData.tipo,
         responsableLogistica: parseInt(formData.responsableLogistica),
         evidenciaUrl: formData.evidenciaUrl || null,
-        creadoPor: parseInt(formData.creadoPor)
+        creadoPor: currentUser.id
       })
       onClose()
     } catch (error) {
@@ -711,14 +765,19 @@ const EditViajeModal = ({ isOpen, onClose, onSave, viaje, operadores, clientes }
                 <label className="block text-sm font-medium text-slate-700 mb-2">
                   Unidad *
                 </label>
-                <input
-                  type="number"
+                <select
                   value={formData.idUnidad}
                   onChange={(e) => setFormData({ ...formData, idUnidad: e.target.value })}
                   className="w-full px-4 py-3 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-900"
-                  placeholder="ID de unidad"
                   required
-                />
+                >
+                  <option value="">Selecciona una unidad</option>
+                  {unidades && unidades.map((unidad) => (
+                    <option key={unidad.id} value={unidad.id}>
+                      {unidad.numeroEconomico} - {unidad.placas}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
           </div>
@@ -882,34 +941,8 @@ const EditViajeModal = ({ isOpen, onClose, onSave, viaje, operadores, clientes }
               <AlertCircle className="h-5 w-5 mr-2 text-blue-600" />
               Información Adicional
             </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Responsable de logística (ID Usuario) *
-                </label>
-                <input
-                  type="number"
-                  value={formData.responsableLogistica}
-                  onChange={(e) => setFormData({ ...formData, responsableLogistica: e.target.value })}
-                  className="w-full px-4 py-3 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-900"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Creado por (ID Usuario) *
-                </label>
-                <input
-                  type="number"
-                  value={formData.creadoPor}
-                  onChange={(e) => setFormData({ ...formData, creadoPor: e.target.value })}
-                  className="w-full px-4 py-3 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-900"
-                  required
-                />
-              </div>
-
-              <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-slate-700 mb-2">
                   Observaciones
                 </label>
@@ -921,7 +954,7 @@ const EditViajeModal = ({ isOpen, onClose, onSave, viaje, operadores, clientes }
                 />
               </div>
 
-              <div className="md:col-span-2">
+              <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">
                   URL de evidencia (opcional)
                 </label>
@@ -932,6 +965,20 @@ const EditViajeModal = ({ isOpen, onClose, onSave, viaje, operadores, clientes }
                   className="w-full px-4 py-3 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-900"
                   placeholder="https://ejemplo.com/evidencia.jpg"
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Actualizado por
+                </label>
+                <div className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg text-slate-700">
+                  <div className="flex items-center">
+                    <User className="h-4 w-4 mr-2 text-slate-500" />
+                    <span className="font-medium">{currentUser?.nombre || 'Cargando...'}</span>
+                    <span className="ml-2 text-sm text-slate-500">({currentUser?.email})</span>
+                  </div>
+                </div>
+                <p className="text-xs text-slate-500 mt-1">Usuario autenticado actualmente</p>
               </div>
             </div>
           </div>
@@ -946,7 +993,7 @@ const EditViajeModal = ({ isOpen, onClose, onSave, viaje, operadores, clientes }
             </button>
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={isLoading || !currentUser}
               className="px-6 cursor-pointer py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? 'Actualizando...' : 'Actualizar viaje'}
@@ -962,8 +1009,20 @@ const ViewViajeModal = ({ isOpen, onClose, viaje }) => {
   if (!isOpen || !viaje) return null
 
   const estadoInfo = ESTADOS[viaje.estado] || ESTADOS.PENDIENTE
-  const tipoInfo = TIPOS_VIAJE[viaje.tipoViaje] || TIPOS_VIAJE.LOCAL
+  const tipoInfo = TIPOS_VIAJE[viaje.tipo || viaje.tipoViaje] || TIPOS_VIAJE.LOCAL
   const EstadoIcon = estadoInfo.icon
+
+  // Obtener información de operador - SIEMPRE mostrar el nombre
+  const operadorNombre = viaje.operador?.nombre || 'No disponible'
+  const operadorLicencia = viaje.operador?.licenciaNumero || viaje.operador?.licencia
+
+  // Obtener información de cliente - SIEMPRE mostrar el nombre
+  const clienteNombre = viaje.cliente?.nombre || 'No disponible'
+  const clienteRfc = viaje.cliente?.rfc
+
+  // Obtener información de unidad - SIEMPRE mostrar el número económico
+  const unidadNumero = viaje.unidad?.numeroEconomico || 'No disponible'
+  const unidadPlacas = viaje.unidad?.placas
 
   return (
     <div className="fixed inset-0 backdrop-blur-xs bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -1012,6 +1071,18 @@ const ViewViajeModal = ({ isOpen, onClose, viaje }) => {
                   <p className="text-base font-semibold text-slate-900 mt-1">{viaje.destino}</p>
                 </div>
               </div>
+              <div className="mt-4 pt-4 border-t border-slate-200">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-xs font-medium text-slate-500">Distancia</label>
+                    <p className="text-sm font-semibold text-slate-900 mt-1">{viaje.distanciaKm} km</p>
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-slate-500">Tarifa</label>
+                    <p className="text-sm font-semibold text-slate-900 mt-1">${viaje.tarifa}</p>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -1028,10 +1099,10 @@ const ViewViajeModal = ({ isOpen, onClose, viaje }) => {
                   <label className="text-xs font-medium text-blue-700">Operador</label>
                 </div>
                 <p className="text-sm font-semibold text-slate-900">
-                  {viaje.operador?.nombre || `ID: ${viaje.operadorId}`}
+                  {operadorNombre}
                 </p>
-                {viaje.operador?.licencia && (
-                  <p className="text-xs text-slate-600 mt-1">Lic: {viaje.operador.licencia}</p>
+                {operadorLicencia && (
+                  <p className="text-xs text-slate-600 mt-1">Lic: {operadorLicencia}</p>
                 )}
               </div>
 
@@ -1041,10 +1112,10 @@ const ViewViajeModal = ({ isOpen, onClose, viaje }) => {
                   <label className="text-xs font-medium text-green-700">Cliente</label>
                 </div>
                 <p className="text-sm font-semibold text-slate-900">
-                  {viaje.cliente?.nombre || `ID: ${viaje.clienteId}`}
+                  {clienteNombre}
                 </p>
-                {viaje.cliente?.rfc && (
-                  <p className="text-xs text-slate-600 mt-1">RFC: {viaje.cliente.rfc}</p>
+                {clienteRfc && (
+                  <p className="text-xs text-slate-600 mt-1">RFC: {clienteRfc}</p>
                 )}
               </div>
 
@@ -1054,12 +1125,30 @@ const ViewViajeModal = ({ isOpen, onClose, viaje }) => {
                   <label className="text-xs font-medium text-purple-700">Unidad</label>
                 </div>
                 <p className="text-sm font-semibold text-slate-900">
-                  {viaje.unidad?.numeroEconomico || `ID: ${viaje.unidadId}`}
+                  {unidadNumero}
                 </p>
-                {viaje.unidad?.placas && (
-                  <p className="text-xs text-slate-600 mt-1">Placas: {viaje.unidad.placas}</p>
+                {unidadPlacas && (
+                  <p className="text-xs text-slate-600 mt-1">Placas: {unidadPlacas}</p>
                 )}
               </div>
+            </div>
+          </div>
+
+          {/* Carga */}
+          <div>
+            <h3 className="text-sm font-semibold text-slate-900 mb-4 flex items-center">
+              <Package className="h-4 w-4 mr-2" />
+              Información de carga
+            </h3>
+            <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
+              <label className="text-xs font-medium text-slate-500">Descripción</label>
+              <p className="text-sm text-slate-900 mt-1">{viaje.cargaDescripcion}</p>
+              {viaje.observaciones && (
+                <div className="mt-3 pt-3 border-t border-slate-200">
+                  <label className="text-xs font-medium text-slate-500">Observaciones</label>
+                  <p className="text-sm text-slate-900 mt-1">{viaje.observaciones}</p>
+                </div>
+              )}
             </div>
           </div>
 
@@ -1069,12 +1158,24 @@ const ViewViajeModal = ({ isOpen, onClose, viaje }) => {
               <Calendar className="h-4 w-4 mr-2" />
               Fechas
             </h3>
-            <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
+            <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 space-y-2">
               <div className="flex items-center text-sm">
                 <Clock className="h-4 w-4 text-slate-400 mr-2" />
                 <span className="text-slate-600">Fecha de salida:</span>
-                <span className="ml-2 font-semibold text-slate-900">{viaje.fechaSalida}</span>
+                <span className="ml-2 font-semibold text-slate-900">{viaje.fechaSalida || 'No especificada'}</span>
               </div>
+              <div className="flex items-center text-sm">
+                <Clock className="h-4 w-4 text-slate-400 mr-2" />
+                <span className="text-slate-600">Llegada estimada:</span>
+                <span className="ml-2 font-semibold text-slate-900">{viaje.fechaEstimadaLlegada || 'No especificada'}</span>
+              </div>
+              {viaje.fechaRealLlegada && (
+                <div className="flex items-center text-sm">
+                  <CheckCircle className="h-4 w-4 text-green-600 mr-2" />
+                  <span className="text-slate-600">Llegada real:</span>
+                  <span className="ml-2 font-semibold text-slate-900">{viaje.fechaRealLlegada}</span>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -1136,6 +1237,7 @@ const ViajesPage = () => {
   const [viajes, setViajes] = useState([])
   const [operadores, setOperadores] = useState([])
   const [clientes, setClientes] = useState([])
+  const [unidades, setUnidades] = useState([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [estadoFilter, setEstadoFilter] = useState('TODOS')
@@ -1199,6 +1301,17 @@ const ViajesPage = () => {
     }
   }
 
+  const loadUnidades = async () => {
+    try {
+      const response = await unidadesService.getAll()
+      const data = Array.isArray(response) ? response : (response.content || response.data || [])
+      setUnidades(data)
+    } catch (error) {
+      console.error('Error loading unidades:', error)
+      setUnidades([])
+    }
+  }
+
   useEffect(() => {
     const loadInitialData = async () => {
       try {
@@ -1206,7 +1319,8 @@ const ViajesPage = () => {
         await Promise.all([
           loadViajes(),
           loadOperadores(),
-          loadClientes()
+          loadClientes(),
+          loadUnidades()
         ])
       } catch (error) {
         console.error('Error loading initial data:', error)
@@ -1275,7 +1389,35 @@ const ViajesPage = () => {
   const handleViewDetails = async (viaje) => {
     try {
       const fullViaje = await viajesService.getViajeById(viaje.id)
-      setSelectedViaje(fullViaje)
+      
+      // Si la API individual solo retorna IDs, buscar la información completa
+      let viajeCompleto = { ...fullViaje }
+      
+      // Buscar operador si solo tenemos el ID
+      if (fullViaje.idOperador && !fullViaje.operador) {
+        const operadorEncontrado = operadores.find(op => op.id === fullViaje.idOperador)
+        if (operadorEncontrado) {
+          viajeCompleto.operador = operadorEncontrado
+        }
+      }
+      
+      // Buscar cliente si solo tenemos el ID
+      if (fullViaje.idCliente && !fullViaje.cliente) {
+        const clienteEncontrado = clientes.find(cl => cl.id === fullViaje.idCliente)
+        if (clienteEncontrado) {
+          viajeCompleto.cliente = clienteEncontrado
+        }
+      }
+      
+      // Buscar unidad si solo tenemos el ID
+      if (fullViaje.idUnidad && !fullViaje.unidad) {
+        const unidadEncontrada = unidades.find(un => un.id === fullViaje.idUnidad)
+        if (unidadEncontrada) {
+          viajeCompleto.unidad = unidadEncontrada
+        }
+      }
+      
+      setSelectedViaje(viajeCompleto)
       setShowViewModal(true)
     } catch (error) {
       toast.error('Error al cargar detalles del viaje')
@@ -1398,6 +1540,9 @@ const ViajesPage = () => {
             onEdit={handleEditViaje}
             onDelete={handleDeleteViaje}
             onViewDetails={handleViewDetails}
+            operadores={operadores}
+            clientes={clientes}
+            unidades={unidades}
           />
         ))}
       </div>
@@ -1416,7 +1561,7 @@ const ViajesPage = () => {
         onSave={handleCreateViaje}
         operadores={operadores}
         clientes={clientes}
-        unidades={[]} // Pendiente de implementación
+        unidades={unidades}
       />
 
       <EditViajeModal
@@ -1429,6 +1574,7 @@ const ViajesPage = () => {
         viaje={selectedViaje}
         operadores={operadores}
         clientes={clientes}
+        unidades={unidades}
       />
 
       <ViewViajeModal

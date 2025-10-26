@@ -1,23 +1,25 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { Bell, Search, User, LogOut, ChevronDown, Menu } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { authService } from '@/app/services/authService'
+import { getRoleDisplayName } from '@/config/permissions'
 
 export function Header({ onMenuClick }) {
   const [showUserMenu, setShowUserMenu] = useState(false)
   const [showSearch, setShowSearch] = useState(false)
-  // Lazy initialization - solo se ejecuta una vez en el cliente
-  const [user, setUser] = useState(() => {
+  const router = useRouter()
+  const userMenuRef = useRef(null)
+
+  // Cargar usuario de forma memoizada
+  const user = useMemo(() => {
     if (typeof window !== 'undefined') {
       return authService.getUser()
     }
     return null
-  })
-  const router = useRouter()
-  const userMenuRef = useRef(null)
+  }, [])
 
   // Cerrar el menú al hacer clic fuera
   useEffect(() => {
@@ -89,11 +91,11 @@ export function Header({ onMenuClick }) {
                 <User className="h-4 w-4 lg:h-5 lg:w-5 text-white" />
               </div>
               <div className="text-left hidden lg:block" suppressHydrationWarning>
-                <p className="text-sm font-semibold text-slate-700" suppressHydrationWarning>
+                <p className="text-sm font-semibold text-slate-700">
                   {user?.nombre || 'Usuario'}
                 </p>
-                <p className="text-xs text-slate-500" suppressHydrationWarning>
-                  {user?.rol?.[0]?.replace('ROLE_', '') || 'Usuario'}
+                <p className="text-xs text-slate-500">
+                  {user?.rol ? getRoleDisplayName(user.rol) : 'Usuario'}
                 </p>
               </div>
               <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform hidden sm:block ${showUserMenu ? 'rotate-180' : ''}`} />
@@ -104,6 +106,9 @@ export function Header({ onMenuClick }) {
                 <div className="px-4 py-3 border-b border-slate-100">
                   <p className="text-sm font-semibold text-slate-700">{user?.nombre || 'Usuario'}</p>
                   <p className="text-xs text-slate-500">{user?.email || 'usuario@optima.com'}</p>
+                  <p className="text-xs text-blue-600 font-medium mt-1">
+                    {user?.rol ? getRoleDisplayName(user.rol) : 'Usuario'}
+                  </p>
                 </div>
                 
                 <button
