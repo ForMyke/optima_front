@@ -27,6 +27,7 @@ import { operadoresService } from '@/app/services/operadoresService'
 import { clientsService } from '@/app/services/clientsService'
 import { unidadesService } from '@/app/services/unidadesService'
 import { authService } from '@/app/services/authService'
+import { usersService } from '@/app/services/usersService'
 
 const StatCard = ({ title, value, icon: Icon, color, description }) => (
   <div className="bg-white rounded-xl shadow-sm p-6 border border-slate-200 hover:shadow-md transition-shadow">
@@ -1088,7 +1089,24 @@ const EditBitacoraModal = ({ isOpen, onClose, onSave, bitacora, viajes, operador
   )
 }
 
-const ViewBitacoraModal = ({ isOpen, onClose, bitacora }) => {
+const ViewBitacoraModal = ({ isOpen, onClose, bitacora, viajes, operadores, clientes, unidades }) => {
+  const [creadorNombre, setCreadorNombre] = useState('Cargando...')
+
+  useEffect(() => {
+    const fetchCreador = async () => {
+      if (isOpen && bitacora?.creadoPor) {
+        try {
+          const usuario = await usersService.getUserById(bitacora.creadoPor)
+          setCreadorNombre(usuario?.nombre || 'Usuario desconocido')
+        } catch (error) {
+          console.error('Error fetching user:', error)
+          setCreadorNombre('Error al cargar')
+        }
+      }
+    }
+    fetchCreador()
+  }, [isOpen, bitacora])
+
   const formatCurrency = (value) => {
     return new Intl.NumberFormat('es-MX', {
       style: 'currency',
@@ -1108,8 +1126,14 @@ const ViewBitacoraModal = ({ isOpen, onClose, bitacora }) => {
 
   if (!isOpen || !bitacora) return null
 
+  // Buscar información relacionada
+  const viaje = viajes?.find(v => v.id === bitacora.viajeId)
+  const cliente = clientes?.find(c => c.id === bitacora.clienteId)
+  const operador = operadores?.find(o => o.id === bitacora.operadorId)
+  const unidad = unidades?.find(u => u.id === bitacora.unidadId)
+
   return (
-    <div className="fixed inset-0 backdrop-blur-xs backdrop-blur-xs bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+    <div className="fixed inset-0 backdrop-blur-xs  bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
       <div className="bg-white rounded-xl shadow-xl max-w-4xl w-full my-8">
         <div className="p-6 border-b border-slate-200">
           <div className="flex items-center justify-between">
@@ -1136,20 +1160,24 @@ const ViewBitacoraModal = ({ isOpen, onClose, bitacora }) => {
                 <p className="text-sm text-slate-900 mt-1 font-semibold">{bitacora.folio}</p>
               </div>
               <div>
-                <label className="text-xs font-medium text-slate-500">ID Viaje</label>
-                <p className="text-sm text-slate-900 mt-1">#{bitacora.viajeId}</p>
+                <label className="text-xs font-medium text-slate-500">Viaje</label>
+                <p className="text-sm text-slate-900 mt-1">
+                  {viaje ? ` ${viaje.origen} → ${viaje.destino}` : `#${bitacora.viajeId}`}
+                </p>
               </div>
               <div>
-                <label className="text-xs font-medium text-slate-500">ID Cliente</label>
-                <p className="text-sm text-slate-900 mt-1">#{bitacora.clienteId}</p>
+                <label className="text-xs font-medium text-slate-500">Cliente</label>
+                <p className="text-sm text-slate-900 mt-1 font-medium">
+                  {cliente ? cliente.nombre : `ID #${bitacora.clienteId}`}
+                </p>
               </div>
               <div>
                 <label className="text-xs font-medium text-slate-500">Número de Factura</label>
                 <p className="text-sm text-slate-900 mt-1">{bitacora.numeroFactura || 'N/A'}</p>
               </div>
               <div>
-                <label className="text-xs font-medium text-slate-500">ID Bitácora</label>
-                <p className="text-sm text-slate-900 mt-1">#{bitacora.id}</p>
+                <label className="text-xs font-medium text-slate-500">Folio bitácora</label>
+                <p className="text-sm text-slate-900 mt-1">{bitacora.folio}</p>
               </div>
             </div>
           </div>
@@ -1208,14 +1236,14 @@ const ViewBitacoraModal = ({ isOpen, onClose, bitacora }) => {
                 <label className="text-xs font-medium text-slate-500">Operador</label>
                 <p className="text-sm text-slate-900 mt-1 flex items-center">
                   <User className="h-3.5 w-3.5 mr-1" />
-                  ID #{bitacora.operadorId}
+                  {operador ? `${operador.nombre} ` : `ID #${bitacora.operadorId}`}
                 </p>
               </div>
               <div>
                 <label className="text-xs font-medium text-slate-500">Unidad</label>
                 <p className="text-sm text-slate-900 mt-1 flex items-center">
                   <Truck className="h-3.5 w-3.5 mr-1" />
-                  ID #{bitacora.unidadId}
+                  {unidad ? `${unidad.modelo} - ${unidad.placas}` : `ID #${bitacora.unidadId}`}
                 </p>
               </div>
               <div>
@@ -1282,8 +1310,11 @@ const ViewBitacoraModal = ({ isOpen, onClose, bitacora }) => {
             </h3>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-xs font-medium text-slate-500">Creado por (ID Usuario)</label>
-                <p className="text-sm text-slate-900 mt-1">#{bitacora.creadoPor}</p>
+                <label className="text-xs font-medium text-slate-500">Creado por</label>
+                <p className="text-sm text-slate-900 mt-1 flex items-center">
+                  <User className="h-3.5 w-3.5 mr-1.5 text-slate-500" />
+                  {creadorNombre}
+                </p>
               </div>
             </div>
           </div>
@@ -1664,6 +1695,10 @@ export default function BitacoraPage() {
           setSelectedBitacora(null)
         }}
         bitacora={selectedBitacora}
+        viajes={viajes}
+        operadores={operadores}
+        clientes={clientes}
+        unidades={unidades}
       />
 
       <ConfirmDeleteModal

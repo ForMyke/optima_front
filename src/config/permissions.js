@@ -20,7 +20,7 @@ export const ROLES = {
  * Configuración de permisos
  * Cada rol tiene un array de rutas permitidas
  * Si la ruta termina con '/*', permite todas las subrutas
- */
+*/
 export const PERMISSIONS = {
   [ROLES.ADMIN]: {
     allowedRoutes: [
@@ -40,6 +40,7 @@ export const PERMISSIONS = {
       '/dashboard/licenses',
       '/dashboard/maintenance',
       '/dashboard/vehicles',
+      '/dashboard/monlo',
       // El admin tiene acceso a TODO
       '*' // Wildcard: acceso completo
     ],

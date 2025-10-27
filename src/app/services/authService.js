@@ -70,8 +70,11 @@ export const authService = {
     if (typeof window === 'undefined') return
     
     try {
-      // Guardar token
+      // Guardar token en localStorage Y en cookies para el middleware
       localStorage.setItem('token', data.token)
+      
+      // Guardar token en cookies para que el middleware pueda leerlo
+      document.cookie = `token=${data.token}; path=/; max-age=36000; SameSite=Strict`
       
       // Normalizar el rol: extraer el primer rol y quitar el prefijo "ROLE_"
       let userRole = data.rol
@@ -103,6 +106,9 @@ export const authService = {
       localStorage.removeItem('token')
       localStorage.removeItem('user')
       localStorage.removeItem('isAuthenticated')
+      
+      // Eliminar cookie del token
+      document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Strict'
     } catch (error) {
       console.error('Error during logout:', error)
     }

@@ -26,7 +26,8 @@ import {
     User2,
     Users2,
     ToolCaseIcon,
-    X
+    X,
+    Globe
 } from 'lucide-react'
 import { useState, useMemo, useEffect } from 'react'
 import Link from 'next/link'
@@ -46,6 +47,7 @@ const availablePages = [
     '/dashboard/viajes',
     '/dashboard/bitacora',
     '/dashboard/unidades',
+    '/dashboard/monlo',
 ]
 
 const menuItems = [
@@ -126,6 +128,11 @@ const menuItems = [
         title: 'Usuarios',
         icon: Users,
         href: '/dashboard/usuarios',
+    },
+    {
+        title: 'Monlo',
+        icon: Globe,
+        href: '/dashboard/monlo',
     },
     {
         title: 'Configuración',

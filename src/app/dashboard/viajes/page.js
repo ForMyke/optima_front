@@ -1021,7 +1021,7 @@ const ViewViajeModal = ({ isOpen, onClose, viaje }) => {
   const clienteRfc = viaje.cliente?.rfc
 
   // Obtener información de unidad - SIEMPRE mostrar el número económico
-  const unidadNumero = viaje.unidad?.numeroEconomico || 'No disponible'
+  const unidadNumero = viaje.unidad?.modelo || 'No disponible'
   const unidadPlacas = viaje.unidad?.placas
 
   return (
