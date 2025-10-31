@@ -38,7 +38,7 @@ const COLORS = {
   primary: ['#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981'],
   status: {
     PENDIENTE: '#f59e0b',
-    EN_PROCESO: '#3b82f6',
+    EN_CURSO: '#3b82f6',
     COMPLETADO: '#10b981',
     CANCELADO: '#ef4444'
   },
@@ -73,9 +73,9 @@ const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
     return (
       <div className="bg-white p-3 rounded-lg shadow-lg border border-slate-200">
-        <p className="font-semibold text-slate-900">{label}</p>
+        <p className="font-bold text-slate-900 mb-1">{label}</p>
         {payload.map((entry, index) => (
-          <p key={index} className="text-sm" style={{ color: entry.color }}>
+          <p key={index} className="text-sm font-semibold" style={{ color: entry.color }}>
             {entry.name}: {typeof entry.value === 'number' 
               ? entry.value.toLocaleString('es-MX', { minimumFractionDigits: 0 })
               : entry.value}
@@ -129,14 +129,24 @@ export default function GraficosPage() {
     viajes.forEach(viaje => {
       if (viaje.fechaSalida) {
         const fecha = new Date(viaje.fechaSalida)
-        const mes = fecha.toLocaleDateString('es-MX', { month: 'short', year: '2-digit' })
-        meses[mes] = (meses[mes] || 0) + 1
+        // Crear clave con formato YYYY-MM para ordenar correctamente
+        const anio = fecha.getFullYear()
+        const mes = fecha.getMonth()
+        const clave = `${anio}-${String(mes + 1).padStart(2, '0')}`
+        const nombreMes = fecha.toLocaleDateString('es-MX', { month: 'short', year: '2-digit' })
+        
+        if (!meses[clave]) {
+          meses[clave] = { mes: nombreMes, cantidad: 0, orden: fecha.getTime() }
+        }
+        meses[clave].cantidad++
       }
     })
     
-    return Object.entries(meses)
-      .map(([mes, cantidad]) => ({ mes, cantidad }))
+    // Ordenar por fecha y tomar los últimos 6 meses
+    return Object.values(meses)
+      .sort((a, b) => a.orden - b.orden)
       .slice(-6)
+      .map(({ mes, cantidad }) => ({ mes, cantidad }))
   }
 
   const getViajesPorEstado = () => {
@@ -276,7 +286,7 @@ export default function GraficosPage() {
   const unidadesArray = Array.isArray(unidades) ? unidades : []
   const stats = {
     totalViajes: Array.isArray(viajes) ? viajes.length : 0,
-    viajesActivos: Array.isArray(viajes) ? viajes.filter(v => v.estado === 'EN_PROCESO').length : 0,
+    viajesActivos: Array.isArray(viajes) ? viajes.filter(v => v.estado === 'EN_CURSO').length : 0,
     totalGastos: Array.isArray(bitacoras) ? bitacoras.reduce((sum, b) => {
       // Sumar los gastos desglosados (no usar costoTotal)
       const diesel = parseFloat(b.dieselLitros || 0)
@@ -387,8 +397,8 @@ export default function GraficosPage() {
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
-                <XAxis dataKey="mes" stroke="#64748b" style={{ fontSize: '12px' }} />
-                <YAxis stroke="#64748b" style={{ fontSize: '12px' }} />
+                <XAxis dataKey="mes" stroke="#334155" style={{ fontSize: '12px' }} />
+                <YAxis stroke="#334155" style={{ fontSize: '12px' }} />
                 <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(59, 130, 246, 0.05)' }} />
                 <Legend />
                 <Bar
@@ -484,8 +494,8 @@ export default function GraficosPage() {
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
-                <XAxis dataKey="mes" stroke="#64748b" style={{ fontSize: '12px' }} />
-                <YAxis stroke="#64748b" style={{ fontSize: '12px' }} />
+                <XAxis dataKey="mes" stroke="#334155" style={{ fontSize: '12px' }} />
+                <YAxis stroke="#334155" style={{ fontSize: '12px' }} />
                 <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(59, 130, 246, 0.05)' }} />
                 <Area
                   type="monotone"
@@ -520,8 +530,8 @@ export default function GraficosPage() {
                   ))}
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
-                <XAxis dataKey="name" stroke="#64748b" style={{ fontSize: '12px' }} />
-                <YAxis stroke="#64748b" style={{ fontSize: '12px' }} />
+                <XAxis dataKey="name" stroke="#334155" style={{ fontSize: '12px' }} />
+                <YAxis stroke="#334155" style={{ fontSize: '12px' }} />
                 <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(59, 130, 246, 0.05)' }} />
                 <Bar dataKey="value" name="Cantidad" radius={[8, 8, 0, 0]}>
                   {getViajesPorEstado().map((entry, index) => (
@@ -610,8 +620,8 @@ export default function GraficosPage() {
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" horizontal={false} />
-                <XAxis type="number" stroke="#64748b" style={{ fontSize: '12px' }} />
-                <YAxis type="category" dataKey="unidad" stroke="#64748b" style={{ fontSize: '11px' }} width={80} />
+                <XAxis type="number" stroke="#334155" style={{ fontSize: '12px' }} />
+                <YAxis type="category" dataKey="unidad" stroke="#334155" style={{ fontSize: '11px' }} width={80} />
                 <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(139, 92, 246, 0.1)' }} />
                 <Bar dataKey="kilometraje" name="Km" fill="url(#gradKm)" radius={[0, 8, 8, 0]} />
               </BarChart>
@@ -638,8 +648,8 @@ export default function GraficosPage() {
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
-                <XAxis dataKey="mes" stroke="#64748b" style={{ fontSize: '12px' }} />
-                <YAxis stroke="#64748b" style={{ fontSize: '12px' }} />
+                <XAxis dataKey="mes" stroke="#334155" style={{ fontSize: '12px' }} />
+                <YAxis stroke="#334155" style={{ fontSize: '12px' }} />
                 <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(239, 68, 68, 0.05)' }} />
                 <Area
                   type="monotone"
