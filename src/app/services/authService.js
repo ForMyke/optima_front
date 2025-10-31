@@ -87,25 +87,33 @@ apiClient.interceptors.request.use(
   }
 )
 
-// Interceptor para manejar errores de autenticación
+// Interceptor para manejar respuestas
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    // Manejar errores 401 (No autorizado) y 403 (Prohibido)
-    if (error.response?.status === 401 || error.response?.status === 403) {
-      // Solo hacer logout si estamos en el cliente
-      if (typeof window !== 'undefined') {
-        console.log(`❌ Error ${error.response.status}: Token inválido o expirado`)
-        
-        // Limpiar autenticación y caché
+    const { config, response } = error
+    
+    // Si el error es de un upload de archivo (FormData), no cerrar sesión automáticamente
+    // Los uploads pueden fallar por tamaño, timeout, etc. sin ser problemas de autenticación
+    const isFileUpload = config?.headers?.['Content-Type']?.includes('multipart/form-data')
+    
+    // Si es un error 401 o 403
+    if (response?.status === 401 || response?.status === 403) {
+      // Si NO es un upload de archivo, hacer logout (es un problema real de autenticación)
+      if (!isFileUpload) {
+        console.warn('🔒 Sesión expirada o sin autorización. Redirigiendo a login...')
         authService.logout()
-        
-        // Redirigir al login solo si no estamos ya en la página de login
-        if (window.location.pathname !== '/') {
-          window.location.href = '/'
-        }
+        window.location.href = '/'
+      } else {
+        // Si ES un upload de archivo, solo logear el error sin hacer logout
+        console.error('❌ Error en upload de archivo (NO se cierra sesión):', {
+          status: response.status,
+          url: config.url,
+          error: response.data
+        })
       }
     }
+    
     return Promise.reject(error)
   }
 )
