@@ -291,6 +291,11 @@ const CreateViajeModal = ({ isOpen, onClose, onSave, operadores, clientes, unida
   const validateForm = () => {
     const newErrors = {}
 
+    // Validar tipo de viaje
+    if (!formData.tipo) {
+      newErrors.tipo = 'Debes seleccionar un tipo de viaje'
+    }
+
     // Validar asignaciones
     if (!formData.idOperador) {
       newErrors.idOperador = 'Debes seleccionar un operador'
@@ -303,14 +308,14 @@ const CreateViajeModal = ({ isOpen, onClose, onSave, operadores, clientes, unida
     }
 
     // Validar origen (mínimo 5 caracteres)
-    if (!formData.origen.trim()) {
+    if (!formData.origen || !formData.origen.trim()) {
       newErrors.origen = 'El origen es obligatorio'
     } else if (formData.origen.trim().length < 5) {
       newErrors.origen = 'El origen debe tener al menos 5 caracteres'
     }
 
     // Validar destino (mínimo 5 caracteres)
-    if (!formData.destino.trim()) {
+    if (!formData.destino || !formData.destino.trim()) {
       newErrors.destino = 'El destino es obligatorio'
     } else if (formData.destino.trim().length < 5) {
       newErrors.destino = 'El destino debe tener al menos 5 caracteres'
@@ -327,13 +332,13 @@ const CreateViajeModal = ({ isOpen, onClose, onSave, operadores, clientes, unida
       newErrors.fechaEstimadaLlegada = 'La fecha estimada de llegada es obligatoria'
     }
 
-    // Validar que la fecha de llegada sea posterior a la de salida
+    // Validar que la fecha de llegada sea posterior o igual a la de salida (permite mismo día para viajes locales)
     if (formData.fechaSalida && formData.fechaEstimadaLlegada) {
       const fechaSalida = new Date(formData.fechaSalida)
       const fechaLlegada = new Date(formData.fechaEstimadaLlegada)
       
-      if (fechaLlegada <= fechaSalida) {
-        newErrors.fechaEstimadaLlegada = 'La fecha de llegada debe ser posterior a la fecha de salida'
+      if (fechaLlegada < fechaSalida) {
+        newErrors.fechaEstimadaLlegada = 'La fecha de llegada no puede ser anterior a la fecha de salida'
       }
     }
 
@@ -356,13 +361,20 @@ const CreateViajeModal = ({ isOpen, onClose, onSave, operadores, clientes, unida
     }
 
     // Validar descripción de carga
-    if (!formData.cargaDescripcion.trim()) {
+    if (!formData.cargaDescripcion || !formData.cargaDescripcion.trim()) {
       newErrors.cargaDescripcion = 'La descripción de la carga es obligatoria'
     } else if (formData.cargaDescripcion.trim().length < 10) {
       newErrors.cargaDescripcion = 'La descripción debe tener al menos 10 caracteres'
     }
 
     setErrors(newErrors)
+    
+    // Debug: mostrar qué campos tienen errores
+    console.log('=== VALIDACIÓN DEL FORMULARIO ===')
+    console.log('Datos del formulario:', formData)
+    console.log('Errores encontrados:', newErrors)
+    console.log('Cantidad de errores:', Object.keys(newErrors).length)
+    
     return Object.keys(newErrors).length === 0
   }
 
@@ -518,10 +530,15 @@ const CreateViajeModal = ({ isOpen, onClose, onSave, operadores, clientes, unida
                   type="text"
                   value={formData.origen}
                   onChange={(e) => setFormData({ ...formData, origen: e.target.value })}
-                  className="w-full px-4 py-3 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-900"
+                  className={`w-full px-4 py-3 bg-white border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-900 ${
+                    errors.origen ? 'border-red-500' : 'border-slate-200'
+                  }`}
                   placeholder="Ej: CDMX"
                   required
                 />
+                {errors.origen && (
+                  <p className="mt-1 text-sm text-red-600">{errors.origen}</p>
+                )}
               </div>
 
               <div>
@@ -532,10 +549,15 @@ const CreateViajeModal = ({ isOpen, onClose, onSave, operadores, clientes, unida
                   type="text"
                   value={formData.destino}
                   onChange={(e) => setFormData({ ...formData, destino: e.target.value })}
-                  className="w-full px-4 py-3 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-900"
+                  className={`w-full px-4 py-3 bg-white border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-900 ${
+                    errors.destino ? 'border-red-500' : 'border-slate-200'
+                  }`}
                   placeholder="Ej: Guadalajara"
                   required
                 />
+                {errors.destino && (
+                  <p className="mt-1 text-sm text-red-600">{errors.destino}</p>
+                )}
               </div>
 
               <div>
@@ -547,10 +569,15 @@ const CreateViajeModal = ({ isOpen, onClose, onSave, operadores, clientes, unida
                   step="0.1"
                   value={formData.distanciaKm}
                   onChange={(e) => setFormData({ ...formData, distanciaKm: e.target.value })}
-                  className="w-full px-4 py-3 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-900"
+                  className={`w-full px-4 py-3 bg-white border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-900 ${
+                    errors.distanciaKm ? 'border-red-500' : 'border-slate-200'
+                  }`}
                   placeholder="550.0"
                   required
                 />
+                {errors.distanciaKm && (
+                  <p className="mt-1 text-sm text-red-600">{errors.distanciaKm}</p>
+                )}
               </div>
 
               <div>
@@ -560,13 +587,18 @@ const CreateViajeModal = ({ isOpen, onClose, onSave, operadores, clientes, unida
                 <select
                   value={formData.tipo}
                   onChange={(e) => setFormData({ ...formData, tipo: e.target.value })}
-                  className="w-full px-4 py-3 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-900"
+                  className={`w-full px-4 py-3 bg-white border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-900 ${
+                    errors.tipo ? 'border-red-500' : 'border-slate-200'
+                  }`}
                   required
                 >
                   <option value="LOCAL">Local</option>
                   <option value="FORANEO">Foráneo</option>
                   <option value="INTERNACIONAL">Internacional</option>
                 </select>
+                {errors.tipo && (
+                  <p className="mt-1 text-sm text-red-600">{errors.tipo}</p>
+                )}
               </div>
             </div>
           </div>
@@ -620,11 +652,16 @@ const CreateViajeModal = ({ isOpen, onClose, onSave, operadores, clientes, unida
                 <textarea
                   value={formData.cargaDescripcion}
                   onChange={(e) => setFormData({ ...formData, cargaDescripcion: e.target.value })}
-                  className="w-full px-4 py-3 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-900"
+                  className={`w-full px-4 py-3 bg-white border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-900 ${
+                    errors.cargaDescripcion ? 'border-red-500' : 'border-slate-200'
+                  }`}
                   placeholder="Descripción detallada de la carga..."
                   rows={3}
                   required
                 />
+                {errors.cargaDescripcion && (
+                  <p className="mt-1 text-sm text-red-600">{errors.cargaDescripcion}</p>
+                )}
               </div>
 
               <div>
@@ -636,10 +673,15 @@ const CreateViajeModal = ({ isOpen, onClose, onSave, operadores, clientes, unida
                   step="0.01"
                   value={formData.tarifa}
                   onChange={(e) => setFormData({ ...formData, tarifa: e.target.value })}
-                  className="w-full px-4 py-3 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-900"
+                  className={`w-full px-4 py-3 bg-white border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-900 ${
+                    errors.tarifa ? 'border-red-500' : 'border-slate-200'
+                  }`}
                   placeholder="4500.50"
                   required
                 />
+                {errors.tarifa && (
+                  <p className="mt-1 text-sm text-red-600">{errors.tarifa}</p>
+                )}
               </div>
 
               <div>
