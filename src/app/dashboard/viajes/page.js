@@ -287,6 +287,7 @@ const CreateViajeModal = ({ isOpen, onClose, onSave, operadores, clientes, unida
     }
   }, [isOpen])
 
+
   // Función de validación
   const validateForm = () => {
     const newErrors = {}
@@ -398,13 +399,13 @@ const CreateViajeModal = ({ isOpen, onClose, onSave, operadores, clientes, unida
         idUnidad: parseInt(formData.idUnidad),
         idOperador: parseInt(formData.idOperador),
         idCliente: parseInt(formData.idCliente),
-        origen: formData.origen,
-        destino: formData.destino,
+        origen: formData.origen.trim(),
+        destino: formData.destino.trim(),
         fechaSalida: formData.fechaSalida,
         fechaEstimadaLlegada: formData.fechaEstimadaLlegada,
         estado: formData.estado,
-        cargaDescripcion: formData.cargaDescripcion,
-        observaciones: formData.observaciones || null,
+        cargaDescripcion: formData.cargaDescripcion.trim(),
+        observaciones: formData.observaciones.trim() || null,
         tarifa: parseFloat(formData.tarifa),
         distanciaKm: parseFloat(formData.distanciaKm),
         tipo: formData.tipo,
@@ -430,9 +431,9 @@ const CreateViajeModal = ({ isOpen, onClose, onSave, operadores, clientes, unida
         evidenciaUrl: '',
         creadoPor: ''
       })
+      setErrors({})
       onClose()
     } catch (error) {
-      console.error('Error saving viaje:', error)
     } finally {
       setIsLoading(false)
     }
@@ -529,15 +530,22 @@ const CreateViajeModal = ({ isOpen, onClose, onSave, operadores, clientes, unida
                 <input
                   type="text"
                   value={formData.origen}
-                  onChange={(e) => setFormData({ ...formData, origen: e.target.value })}
-                  className={`w-full px-4 py-3 bg-white border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-900 ${
-                    errors.origen ? 'border-red-500' : 'border-slate-200'
+                  onChange={(e) => {
+                    setFormData({ ...formData, origen: e.target.value })
+                    if (errors.origen) setErrors({ ...errors, origen: '' })
+                  }}
+                  className={`w-full px-4 py-3 bg-white border rounded-lg focus:outline-none focus:ring-2 transition-all text-slate-900 ${
+                    errors.origen 
+                      ? 'border-red-300 focus:ring-red-500 focus:border-red-500' 
+                      : 'border-slate-200 focus:ring-blue-500 focus:border-transparent'
                   }`}
                   placeholder="Ej: CDMX"
-                  required
                 />
                 {errors.origen && (
-                  <p className="mt-1 text-sm text-red-600">{errors.origen}</p>
+                  <p className="mt-1 text-sm text-red-600 flex items-center">
+                    <AlertCircle className="h-4 w-4 mr-1" />
+                    {errors.origen}
+                  </p>
                 )}
               </div>
 
@@ -548,15 +556,22 @@ const CreateViajeModal = ({ isOpen, onClose, onSave, operadores, clientes, unida
                 <input
                   type="text"
                   value={formData.destino}
-                  onChange={(e) => setFormData({ ...formData, destino: e.target.value })}
-                  className={`w-full px-4 py-3 bg-white border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-900 ${
-                    errors.destino ? 'border-red-500' : 'border-slate-200'
+                  onChange={(e) => {
+                    setFormData({ ...formData, destino: e.target.value })
+                    if (errors.destino) setErrors({ ...errors, destino: '' })
+                  }}
+                  className={`w-full px-4 py-3 bg-white border rounded-lg focus:outline-none focus:ring-2 transition-all text-slate-900 ${
+                    errors.destino 
+                      ? 'border-red-300 focus:ring-red-500 focus:border-red-500' 
+                      : 'border-slate-200 focus:ring-blue-500 focus:border-transparent'
                   }`}
                   placeholder="Ej: Guadalajara"
-                  required
                 />
                 {errors.destino && (
-                  <p className="mt-1 text-sm text-red-600">{errors.destino}</p>
+                  <p className="mt-1 text-sm text-red-600 flex items-center">
+                    <AlertCircle className="h-4 w-4 mr-1" />
+                    {errors.destino}
+                  </p>
                 )}
               </div>
 
@@ -568,15 +583,22 @@ const CreateViajeModal = ({ isOpen, onClose, onSave, operadores, clientes, unida
                   type="number"
                   step="0.1"
                   value={formData.distanciaKm}
-                  onChange={(e) => setFormData({ ...formData, distanciaKm: e.target.value })}
-                  className={`w-full px-4 py-3 bg-white border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-900 ${
-                    errors.distanciaKm ? 'border-red-500' : 'border-slate-200'
+                  onChange={(e) => {
+                    setFormData({ ...formData, distanciaKm: e.target.value })
+                    if (errors.distanciaKm) setErrors({ ...errors, distanciaKm: '' })
+                  }}
+                  className={`w-full px-4 py-3 bg-white border rounded-lg focus:outline-none focus:ring-2 transition-all text-slate-900 ${
+                    errors.distanciaKm 
+                      ? 'border-red-300 focus:ring-red-500 focus:border-red-500' 
+                      : 'border-slate-200 focus:ring-blue-500 focus:border-transparent'
                   }`}
                   placeholder="550.0"
-                  required
                 />
                 {errors.distanciaKm && (
-                  <p className="mt-1 text-sm text-red-600">{errors.distanciaKm}</p>
+                  <p className="mt-1 text-sm text-red-600 flex items-center">
+                    <AlertCircle className="h-4 w-4 mr-1" />
+                    {errors.distanciaKm}
+                  </p>
                 )}
               </div>
 
@@ -617,10 +639,22 @@ const CreateViajeModal = ({ isOpen, onClose, onSave, operadores, clientes, unida
                 <input
                   type="date"
                   value={formData.fechaSalida}
-                  onChange={(e) => setFormData({ ...formData, fechaSalida: e.target.value })}
-                  className="w-full px-4 py-3 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-900"
-                  required
+                  onChange={(e) => {
+                    setFormData({ ...formData, fechaSalida: e.target.value })
+                    if (errors.fechaSalida) setErrors({ ...errors, fechaSalida: '' })
+                  }}
+                  className={`w-full px-4 py-3 bg-white border rounded-lg focus:outline-none focus:ring-2 transition-all text-slate-900 ${
+                    errors.fechaSalida 
+                      ? 'border-red-300 focus:ring-red-500 focus:border-red-500' 
+                      : 'border-slate-200 focus:ring-blue-500 focus:border-transparent'
+                  }`}
                 />
+                {errors.fechaSalida && (
+                  <p className="mt-1 text-sm text-red-600 flex items-center">
+                    <AlertCircle className="h-4 w-4 mr-1" />
+                    {errors.fechaSalida}
+                  </p>
+                )}
               </div>
 
               <div>
@@ -630,10 +664,22 @@ const CreateViajeModal = ({ isOpen, onClose, onSave, operadores, clientes, unida
                 <input
                   type="date"
                   value={formData.fechaEstimadaLlegada}
-                  onChange={(e) => setFormData({ ...formData, fechaEstimadaLlegada: e.target.value })}
-                  className="w-full px-4 py-3 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-900"
-                  required
+                  onChange={(e) => {
+                    setFormData({ ...formData, fechaEstimadaLlegada: e.target.value })
+                    if (errors.fechaEstimadaLlegada) setErrors({ ...errors, fechaEstimadaLlegada: '' })
+                  }}
+                  className={`w-full px-4 py-3 bg-white border rounded-lg focus:outline-none focus:ring-2 transition-all text-slate-900 ${
+                    errors.fechaEstimadaLlegada 
+                      ? 'border-red-300 focus:ring-red-500 focus:border-red-500' 
+                      : 'border-slate-200 focus:ring-blue-500 focus:border-transparent'
+                  }`}
                 />
+                {errors.fechaEstimadaLlegada && (
+                  <p className="mt-1 text-sm text-red-600 flex items-center">
+                    <AlertCircle className="h-4 w-4 mr-1" />
+                    {errors.fechaEstimadaLlegada}
+                  </p>
+                )}
               </div>
             </div>
           </div>
@@ -651,16 +697,23 @@ const CreateViajeModal = ({ isOpen, onClose, onSave, operadores, clientes, unida
                 </label>
                 <textarea
                   value={formData.cargaDescripcion}
-                  onChange={(e) => setFormData({ ...formData, cargaDescripcion: e.target.value })}
-                  className={`w-full px-4 py-3 bg-white border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-900 ${
-                    errors.cargaDescripcion ? 'border-red-500' : 'border-slate-200'
+                  onChange={(e) => {
+                    setFormData({ ...formData, cargaDescripcion: e.target.value })
+                    if (errors.cargaDescripcion) setErrors({ ...errors, cargaDescripcion: '' })
+                  }}
+                  className={`w-full px-4 py-3 bg-white border rounded-lg focus:outline-none focus:ring-2 transition-all text-slate-900 ${
+                    errors.cargaDescripcion 
+                      ? 'border-red-300 focus:ring-red-500 focus:border-red-500' 
+                      : 'border-slate-200 focus:ring-blue-500 focus:border-transparent'
                   }`}
                   placeholder="Descripción detallada de la carga..."
                   rows={3}
-                  required
                 />
                 {errors.cargaDescripcion && (
-                  <p className="mt-1 text-sm text-red-600">{errors.cargaDescripcion}</p>
+                  <p className="mt-1 text-sm text-red-600 flex items-center">
+                    <AlertCircle className="h-4 w-4 mr-1" />
+                    {errors.cargaDescripcion}
+                  </p>
                 )}
               </div>
 
@@ -672,15 +725,22 @@ const CreateViajeModal = ({ isOpen, onClose, onSave, operadores, clientes, unida
                   type="number"
                   step="0.01"
                   value={formData.tarifa}
-                  onChange={(e) => setFormData({ ...formData, tarifa: e.target.value })}
-                  className={`w-full px-4 py-3 bg-white border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-900 ${
-                    errors.tarifa ? 'border-red-500' : 'border-slate-200'
+                  onChange={(e) => {
+                    setFormData({ ...formData, tarifa: e.target.value })
+                    if (errors.tarifa) setErrors({ ...errors, tarifa: '' })
+                  }}
+                  className={`w-full px-4 py-3 bg-white border rounded-lg focus:outline-none focus:ring-2 transition-all text-slate-900 ${
+                    errors.tarifa 
+                      ? 'border-red-300 focus:ring-red-500 focus:border-red-500' 
+                      : 'border-slate-200 focus:ring-blue-500 focus:border-transparent'
                   }`}
                   placeholder="4500.50"
-                  required
                 />
                 {errors.tarifa && (
-                  <p className="mt-1 text-sm text-red-600">{errors.tarifa}</p>
+                  <p className="mt-1 text-sm text-red-600 flex items-center">
+                    <AlertCircle className="h-4 w-4 mr-1" />
+                    {errors.tarifa}
+                  </p>
                 )}
               </div>
 
@@ -774,7 +834,7 @@ const CreateViajeModal = ({ isOpen, onClose, onSave, operadores, clientes, unida
   )
 }
 
-const EditViajeModal = ({ isOpen, onClose, onSave, viaje, operadores, clientes, unidades }) => {
+const EditViajeModal = ({ isOpen, onClose, onSave, viaje, operadores, clientes, unidades, onEstadoChange }) => {
   const [formData, setFormData] = useState({
     idUnidad: '',
     idOperador: '',
@@ -857,7 +917,6 @@ const EditViajeModal = ({ isOpen, onClose, onSave, viaje, operadores, clientes, 
       })
       onClose()
     } catch (error) {
-      console.error('Error saving viaje:', error)
     } finally {
       setIsLoading(false)
     }
@@ -1076,12 +1135,26 @@ const EditViajeModal = ({ isOpen, onClose, onSave, viaje, operadores, clientes, 
 
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Estado *
+                  Estado del viaje *
                 </label>
                 <select
                   value={formData.estado}
-                  onChange={(e) => setFormData({ ...formData, estado: e.target.value })}
-                  className="w-full px-4 py-3 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-900"
+                  onChange={(e) => {
+                    const nuevoEstado = e.target.value
+                    // Si el estado cambió, abrir el modal de evidencia
+                    if (nuevoEstado !== formData.estado && onEstadoChange) {
+                      // Cerrar el modal de edición y abrir el modal de evidencia
+                      onEstadoChange(viaje, nuevoEstado)
+                    } else {
+                      setFormData({ ...formData, estado: nuevoEstado })
+                    }
+                  }}
+                  className={`w-full px-3 py-2 rounded-lg border-2 transition-all font-medium text-sm cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    formData.estado === 'PENDIENTE' ? 'border-yellow-200 bg-yellow-50 text-yellow-800' :
+                    formData.estado === 'EN_CURSO' ? 'border-blue-200 bg-blue-50 text-blue-800' :
+                    formData.estado === 'COMPLETADO' ? 'border-green-200 bg-green-50 text-green-800' :
+                    'border-red-200 bg-red-50 text-red-800'
+                  }`}
                   required
                 >
                   <option value="PENDIENTE">Pendiente</option>
@@ -1165,6 +1238,8 @@ const EditViajeModal = ({ isOpen, onClose, onSave, viaje, operadores, clientes, 
 
 const ViewViajeModal = ({ isOpen, onClose, viaje }) => {
   if (!isOpen || !viaje) return null
+
+
 
   const estadoInfo = ESTADOS[viaje.estado] || ESTADOS.PENDIENTE
   const tipoInfo = TIPOS_VIAJE[viaje.tipo || viaje.tipoViaje] || TIPOS_VIAJE.LOCAL
@@ -1336,6 +1411,36 @@ const ViewViajeModal = ({ isOpen, onClose, viaje }) => {
               )}
             </div>
           </div>
+
+          {/* Evidencia fotográfica */}
+          {viaje.evidenciaUrl && (
+            <div>
+              <h3 className="text-sm font-semibold text-slate-900 mb-4 flex items-center">
+                <Camera className="h-4 w-4 mr-2" />
+                Evidencia fotográfica
+              </h3>
+              <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
+                <div className="relative w-full h-64 mb-3">
+                  <Image
+                    src={viaje.evidenciaUrl}
+                    alt={`Evidencia del viaje #${viaje.id}`}
+                    fill
+                    className="rounded-lg object-cover"
+                    unoptimized
+                  />
+                </div>
+                <a
+                  href={viaje.evidenciaUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+                >
+                  <Eye className="h-4 w-4" />
+                  <span>Ver imagen completa</span>
+                </a>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="p-6 border-t border-slate-200">
@@ -1412,15 +1517,28 @@ const EvidenciaModal = ({ isOpen, onClose, onSave, viaje, nuevoEstado }) => {
     if (file) {
       // Validar que sea una imagen
       if (!file.type.startsWith('image/')) {
-        toast.error('Por favor selecciona una imagen válida')
+        toast.error('Por favor selecciona una imagen válida (JPG, PNG, JPEG)')
         return
       }
 
-      // Validar tamaño (máximo 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error('La imagen no debe superar los 5MB')
+      // Validar tamaño (máximo 1MB para evitar errores 403)
+      const maxSize = 1 * 1024 * 1024 // 1MB
+      const sizeMB = (file.size / 1024 / 1024).toFixed(2)
+      
+  
+      
+      if (file.size > maxSize) {
+        toast.error(
+          `Imagen muy pesada (${sizeMB}MB)\n\nEl tamaño máximo permitido es 1MB.\nPor favor reduce el tamaño de la imagen antes de subirla.`,
+          { duration: 5000 }
+        )
+        // Limpiar el input
+        if (e.target) {
+          e.target.value = ''
+        }
         return
       }
+
 
       setSelectedFile(file)
 
@@ -1436,28 +1554,69 @@ const EvidenciaModal = ({ isOpen, onClose, onSave, viaje, nuevoEstado }) => {
   const handleSubmit = async (e) => {
     e.preventDefault()
 
-    if (!selectedFile) {
-      toast.error('Por favor selecciona una imagen')
+    const sizeMB = selectedFile ? (selectedFile.size / 1024 / 1024).toFixed(2) : 'N/A'
+
+
+    // Si el estado es COMPLETADO, requiere evidencia
+    if (nuevoEstado === 'COMPLETADO' && !selectedFile) {
+      toast.error('⚠️ Se requiere evidencia fotográfica para completar el viaje')
       return
     }
 
+    // Validación ESTRICTA de tamaño antes de enviar (1MB máximo)
+    if (selectedFile) {
+      const maxSize = 1 * 1024 * 1024 // 1MB
+      if (selectedFile.size > maxSize) {
+        toast.error(
+          `La imagen (${sizeMB}MB) supera el límite de 1MB.\n\nPor favor reduce el tamaño de la imagen antes de continuar.`,
+          { duration: 5000 }
+        )
+        return
+      }
+    }
+
     setUploading(true)
+    const loadingToast = toast.loading('Subiendo imagen y cambiando estado...')
+    
     try {
-      // Aquí normalmente subirías la imagen a un servicio como S3, Cloudinary, etc.
-      // Por ahora simulamos la URL
-      const evidenciaUrl = previewUrl // En producción sería la URL del servidor
-
-      await onSave({
-        evidenciaUrl,
-        comentarios,
-        nuevoEstado
-      })
-
-      toast.success('Evidencia cargada exitosamente')
+      
+      await viajesService.cambiarEstado(viaje.id, nuevoEstado, selectedFile)
+      
+      const estadoTexto = {
+        'PENDIENTE': 'pendiente',
+        'EN_CURSO': 'en curso',
+        'EN_PROCESO': 'en proceso',
+        'COMPLETADO': 'completado',
+        'CANCELADO': 'cancelado'
+      }[nuevoEstado] || nuevoEstado.toLowerCase()
+      
+      toast.dismiss(loadingToast)
+      toast.success(`✓ Viaje cambiado a ${estadoTexto} exitosamente`)
       handleClose()
+      
+      // Recargar la lista de viajes para mostrar los cambios
+      if (onSave) {
+        await onSave()
+      }
     } catch (error) {
-      toast.error('Error al cargar la evidencia')
-      console.error(error)
+      toast.dismiss(loadingToast)
+      
+      // Determinar el mensaje de error apropiado
+      let errorMessage = 'Error al cambiar el estado del viaje'
+      
+      if (error.response?.status === 403) {
+        errorMessage = '🚫 Acceso denegado. La imagen supera el límite permitido por el servidor (1MB máximo).'
+      } else if (error.response?.status === 413) {
+        errorMessage = '🚫 La imagen es demasiado grande. El servidor solo acepta imágenes de hasta 1MB.'
+      } else if (error.message?.includes('size') || error.message?.includes('tamaño') || error.message?.includes('large') || error.message?.includes('pesada')) {
+        errorMessage = `⚠️ ${error.message}\n\nPor favor comprime la imagen antes de subirla.`
+      } else if (error.message?.includes('timeout')) {
+        errorMessage = '⏱️ La carga tardó demasiado. Intenta con una imagen más pequeña.'
+      } else if (error.message) {
+        errorMessage = error.message
+      }
+      
+      toast.error(errorMessage, { duration: 6000 })
     } finally {
       setUploading(false)
     }
@@ -1477,6 +1636,7 @@ const EvidenciaModal = ({ isOpen, onClose, onSave, viaje, nuevoEstado }) => {
 
   const estadoInfo = ESTADOS[nuevoEstado] || ESTADOS.PENDIENTE
   const EstadoIcon = estadoInfo.icon
+  const requiereEvidencia = nuevoEstado === 'COMPLETADO'
 
   return (
     <div className="fixed inset-0 backdrop-blur-xs bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -1484,7 +1644,9 @@ const EvidenciaModal = ({ isOpen, onClose, onSave, viaje, nuevoEstado }) => {
         <div className="p-6 border-b border-slate-200">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-2xl font-bold text-slate-900">Subir evidencia fotográfica</h2>
+              <h2 className="text-2xl font-bold text-slate-900">
+                {requiereEvidencia ? 'Subir evidencia fotográfica' : 'Cambiar estado del viaje'}
+              </h2>
               <p className="text-sm text-slate-600 mt-1">
                 Viaje #{viaje?.id} - Cambio a estado:
                 <span className={`ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${estadoInfo.color}`}>
@@ -1506,7 +1668,8 @@ const EvidenciaModal = ({ isOpen, onClose, onSave, viaje, nuevoEstado }) => {
           {/* Área de carga de imagen */}
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-3">
-              Fotografía de evidencia *
+              Fotografía de evidencia {requiereEvidencia && '*'}
+              {!requiereEvidencia && <span className="text-slate-500 text-xs ml-1">(opcional)</span>}
             </label>
 
             {!previewUrl ? (
@@ -1516,7 +1679,8 @@ const EvidenciaModal = ({ isOpen, onClose, onSave, viaje, nuevoEstado }) => {
               >
                 <Camera className="h-12 w-12 text-slate-400 mx-auto mb-4" />
                 <p className="text-slate-600 font-medium mb-1">Click para seleccionar una imagen</p>
-                <p className="text-sm text-slate-500">PNG, JPG o JPEG (máx. 5MB)</p>
+                <p className="text-sm text-slate-500">PNG, JPG o JPEG (máx. 1MB)</p>
+                <p className="text-xs text-amber-600 mt-2">Archivos mayores a 1MB serán rechazados</p>
               </div>
             ) : (
               <div className="relative">
@@ -1527,6 +1691,17 @@ const EvidenciaModal = ({ isOpen, onClose, onSave, viaje, nuevoEstado }) => {
                   alt="Preview"
                   className="w-full h-64 object-cover rounded-xl border-2 border-slate-200"
                 />
+                {/* Información del archivo */}
+                <div className="absolute top-2 left-2 bg-black bg-opacity-75 text-white px-3 py-1.5 rounded-lg text-xs font-medium">
+                  {selectedFile && (
+                    <>
+                      <span className="block">{selectedFile.name}</span>
+                      <span className="block text-green-400">
+                        {(selectedFile.size / 1024 / 1024).toFixed(2)}MB / 1MB
+                      </span>
+                    </>
+                  )}
+                </div>
                 <button
                   type="button"
                   onClick={() => {
@@ -1560,19 +1735,6 @@ const EvidenciaModal = ({ isOpen, onClose, onSave, viaje, nuevoEstado }) => {
             />
           </div>
 
-          {/* Comentarios */}
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">
-              Comentarios adicionales (opcional)
-            </label>
-            <textarea
-              value={comentarios}
-              onChange={(e) => setComentarios(e.target.value)}
-              className="w-full px-4 py-3 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-900"
-              rows={4}
-              placeholder="Agrega notas o comentarios sobre este cambio de estado..."
-            />
-          </div>
 
           {/* Información del viaje */}
           <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
@@ -1601,18 +1763,27 @@ const EvidenciaModal = ({ isOpen, onClose, onSave, viaje, nuevoEstado }) => {
             </button>
             <button
               type="submit"
-              disabled={uploading || !selectedFile}
+              disabled={uploading || (requiereEvidencia && !selectedFile)}
               className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
             >
               {uploading ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-                  <span>Subiendo...</span>
+                  <span>Procesando...</span>
                 </>
               ) : (
                 <>
-                  <Upload className="h-4 w-4" />
-                  <span>Subir evidencia</span>
+                  {requiereEvidencia ? (
+                    <>
+                      <Upload className="h-4 w-4" />
+                      <span>Subir evidencia</span>
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle className="h-4 w-4" />
+                      <span>Cambiar estado</span>
+                    </>
+                  )}
                 </>
               )}
             </button>
@@ -1670,7 +1841,7 @@ const ViajesPage = () => {
         completados
       })
     } catch (error) {
-      console.error('Error loading viajes:', error)
+
       toast.error('Error al cargar viajes')
     }
   }
@@ -1680,7 +1851,6 @@ const ViajesPage = () => {
       const response = await operadoresService.getOperadores(0, 100)
       setOperadores(response.content || [])
     } catch (error) {
-      console.error('Error loading operadores:', error)
     }
   }
 
@@ -1689,7 +1859,6 @@ const ViajesPage = () => {
       const response = await clientsService.getClients(0, 100)
       setClientes(response.content || [])
     } catch (error) {
-      console.error('Error loading clientes:', error)
     }
   }
 
@@ -1699,7 +1868,6 @@ const ViajesPage = () => {
       const data = Array.isArray(response) ? response : (response.content || response.data || [])
       setUnidades(data)
     } catch (error) {
-      console.error('Error loading unidades:', error)
       setUnidades([])
     }
   }
@@ -1715,7 +1883,6 @@ const ViajesPage = () => {
           loadUnidades()
         ])
       } catch (error) {
-        console.error('Error loading initial data:', error)
         toast.error('Error al cargar datos iniciales')
       } finally {
         setLoading(false)
@@ -1822,22 +1989,14 @@ const ViajesPage = () => {
     setShowEvidenciaModal(true)
   }
 
-  const handleSaveEvidencia = async ({ evidenciaUrl, comentarios, nuevoEstado }) => {
+  const handleSaveEvidencia = async () => {
     try {
-      await viajesService.updateViaje(selectedViaje.id, {
-        ...selectedViaje,
-        evidenciaUrl,
-        comentarios,
-        estado: nuevoEstado
-      })
-      toast.success('Estado del viaje actualizado')
+      // Solo recargar los viajes, el endpoint /completar ya hizo todo el trabajo
       setShowEvidenciaModal(false)
       setSelectedViaje(null)
       setNuevoEstado(null)
-      loadViajes()
+      await loadViajes()
     } catch (error) {
-      toast.error('Error al actualizar el estado del viaje')
-      console.error(error)
     }
   }
 
@@ -1993,6 +2152,14 @@ const ViajesPage = () => {
         operadores={operadores}
         clientes={clientes}
         unidades={unidades}
+        onEstadoChange={(viaje, estado) => {
+          // Cerrar el modal de edición
+          setShowEditModal(false)
+          // Abrir el modal de evidencia con el nuevo estado
+          setSelectedViaje(viaje)
+          setNuevoEstado(estado)
+          setShowEvidenciaModal(true)
+        }}
       />
 
       <ViewViajeModal
