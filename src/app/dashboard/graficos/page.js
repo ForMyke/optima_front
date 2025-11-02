@@ -319,7 +319,7 @@ export default function GraficosPage() {
         <div className="mb-6 lg:mb-8">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             <div>
-              <h1 className="text-2xl lg:text-3xl font-bold text-slate-900">Dashboard de Análisis</h1>
+              <h1 className="text-2xl lg:text-3xl font-bold text-slate-900">Gráficos</h1>
               <p className="text-sm lg:text-base text-slate-600 mt-1">
                 Visualización y análisis de datos operacionales
               </p>
@@ -335,10 +335,6 @@ export default function GraficosPage() {
                 <option value="6m">Últimos 6 meses</option>
                 <option value="1a">Último año</option>
               </select>
-              <button className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium cursor-pointer">
-                <Download className="h-4 w-4 mr-2" />
-                Exportar
-              </button>
             </div>
           </div>
         </div>
