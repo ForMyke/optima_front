@@ -311,8 +311,8 @@ const CreateViajeModal = ({ isOpen, onClose, onSave, operadores, clientes, unida
     // Validar origen (mínimo 5 caracteres)
     if (!formData.origen || !formData.origen.trim()) {
       newErrors.origen = 'El origen es obligatorio'
-    } else if (formData.origen.trim().length < 5) {
-      newErrors.origen = 'El origen debe tener al menos 5 caracteres'
+    } else if (formData.origen.trim().length < 3) {
+      newErrors.origen = 'El origen debe tener al menos 3 caracteres'
     }
 
     // Validar destino (mínimo 5 caracteres)
@@ -1496,7 +1496,7 @@ const ConfirmDeleteModal = ({ isOpen, onClose, onConfirm, viaje }) => {
   )
 }
 
-const EvidenciaModal = ({ isOpen, onClose, onSave, viaje, nuevoEstado }) => {
+const EvidenciaModal = ({ isOpen, onClose, onSave, viaje, nuevoEstado, setViajes }) => {
   const [selectedFile, setSelectedFile] = useState(null)
   const [previewUrl, setPreviewUrl] = useState(null)
   const [uploading, setUploading] = useState(false)
@@ -1592,9 +1592,19 @@ const EvidenciaModal = ({ isOpen, onClose, onSave, viaje, nuevoEstado }) => {
       
       toast.dismiss(loadingToast)
       toast.success(`✓ Viaje cambiado a ${estadoTexto} exitosamente`)
+      
+      // Actualizar el estado del viaje localmente sin recargar toda la lista
+      setViajes(prevViajes => 
+        prevViajes.map(v => 
+          v.id === viaje.id 
+            ? { ...v, estado: nuevoEstado }
+            : v
+        )
+      )
+      
       handleClose()
       
-      // Recargar la lista de viajes para mostrar los cambios
+      // Notificar que se completó (solo para cerrar el modal)
       if (onSave) {
         await onSave()
       }
@@ -1991,11 +2001,10 @@ const ViajesPage = () => {
 
   const handleSaveEvidencia = async () => {
     try {
-      // Solo recargar los viajes, el endpoint /completar ya hizo todo el trabajo
+      // El modal ya cambió el estado, solo cerramos sin recargar
       setShowEvidenciaModal(false)
       setSelectedViaje(null)
       setNuevoEstado(null)
-      await loadViajes()
     } catch (error) {
     }
   }
@@ -2191,6 +2200,7 @@ const ViajesPage = () => {
         onSave={handleSaveEvidencia}
         viaje={selectedViaje}
         nuevoEstado={nuevoEstado}
+        setViajes={setViajes}
       />
     </div>
   )

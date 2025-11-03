@@ -805,21 +805,6 @@ const ViewClientModal = ({ isOpen, onClose, client }) => {
             </div>
           </div>
 
-          {/* Información del Sistema */}
-          {client.id && (
-            <div>
-              <h3 className="text-sm font-semibold text-slate-900 mb-4 flex items-center">
-                <FileText className="h-4 w-4 mr-2" />
-                Información del sistema
-              </h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-xs font-medium text-slate-500">ID de Cliente</label>
-                  <p className="text-sm text-slate-900 mt-1">#{client.id}</p>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
 
         <div className="p-6 border-t border-slate-200">

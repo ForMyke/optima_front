@@ -1990,11 +1990,11 @@ export default function BitacoraPage() {
             description="Suma de todos los viajes"
           />
           <StatCard
-            title="Diesel Total"
-            value={`${stats.totalDiesel.toFixed(1)} L`}
+            title="Costo de diesel"
+            value={`$${stats.totalDiesel.toFixed(1)}`}
             icon={Fuel}
             color="bg-amber-600"
-            description="Litros consumidos"
+            description="Costo total de diesel consumido"
           />
           <StatCard
             title="Casetas Total"

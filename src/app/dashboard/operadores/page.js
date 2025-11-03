@@ -1018,27 +1018,7 @@ const ViewOperadorModal = ({ isOpen, onClose, operador }) => {
             </div>
           </div>
 
-          {/* Información del Sistema */}
-          {operador.id && (
-            <div>
-              <h3 className="text-sm font-semibold text-slate-900 mb-4 flex items-center">
-                <Shield className="h-4 w-4 mr-2" />
-                Información del sistema
-              </h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-xs font-medium text-slate-500">ID de Operador</label>
-                  <p className="text-sm text-slate-900 mt-1">#{operador.id}</p>
-                </div>
-                {operador.usuarioId && (
-                  <div>
-                    <label className="text-xs font-medium text-slate-500">Usuario asociado</label>
-                    <p className="text-sm text-slate-900 mt-1">ID: {operador.usuarioId}</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
+
         </div>
 
         <div className="p-6 border-t border-slate-200">
