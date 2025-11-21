@@ -8,6 +8,7 @@ import {
   DollarSign, 
   Receipt, 
   Truck,
+  User,
   MoreVertical,
   Eye,
   Edit2,
@@ -46,7 +47,9 @@ const BitacoraCard = ({ bitacora, onEdit, onDelete, onViewDetails }) => {
     return new Date(date).toLocaleDateString('es-MX', {
       year: 'numeric',
       month: 'short',
-      day: 'numeric'
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
     })
   }
 
@@ -60,14 +63,14 @@ const BitacoraCard = ({ bitacora, onEdit, onDelete, onViewDetails }) => {
             </div>
             <div className="flex-1">
               <div className="flex items-center space-x-2 mb-1">
-                <h3 className="text-lg font-semibold text-slate-900">{bitacora.folio}</h3>
+                <h3 className="text-lg font-semibold text-slate-900">Bitácora #{bitacora.id}</h3>
                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-blue-100 text-blue-800">
-                  Viaje #{bitacora.viajeId}
+                  {bitacora.totalViajes} viaje{bitacora.totalViajes !== 1 ? 's' : ''}
                 </span>
               </div>
               <div className="flex items-center text-sm text-slate-500 space-x-2">
-                <MapPin className="h-3.5 w-3.5" />
-                <span className="truncate">{bitacora.origen} → {bitacora.destino}</span>
+                <Calendar className="h-3.5 w-3.5" />
+                <span className="truncate">{formatDate(bitacora.creadoEn)}</span>
               </div>
             </div>
           </div>
@@ -117,36 +120,40 @@ const BitacoraCard = ({ bitacora, onEdit, onDelete, onViewDetails }) => {
         </div>
 
         <div className="space-y-3 mb-4">
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-slate-500 flex items-center">
-              <Calendar className="h-3.5 w-3.5 mr-1.5" />
-              Carga
-            </span>
-            <span className="font-medium text-slate-900">{formatDate(bitacora.fechaCarga)}</span>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="bg-slate-50 p-3 rounded-lg">
+              <span className="text-xs font-medium text-slate-500 block mb-1">Casetas</span>
+              <span className="font-semibold text-slate-900">{formatCurrency(bitacora.casetas)}</span>
+            </div>
+            <div className="bg-slate-50 p-3 rounded-lg">
+              <span className="text-xs font-medium text-slate-500 block mb-1">Diesel</span>
+              <span className="font-semibold text-slate-900">{formatCurrency(bitacora.dieselLitros)}</span>
+            </div>
+            <div className="bg-slate-50 p-3 rounded-lg">
+              <span className="text-xs font-medium text-slate-500 block mb-1">Comisión</span>
+              <span className="font-semibold text-slate-900">{formatCurrency(bitacora.comisionOperador)}</span>
+            </div>
+            <div className="bg-slate-50 p-3 rounded-lg">
+              <span className="text-xs font-medium text-slate-500 block mb-1">Gastos Extras</span>
+              <span className="font-semibold text-slate-900">{formatCurrency(bitacora.gastosExtras)}</span>
+            </div>
           </div>
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-slate-500 flex items-center">
-              <Calendar className="h-3.5 w-3.5 mr-1.5" />
-              Entrega
-            </span>
-            <span className="font-medium text-slate-900">{formatDate(bitacora.fechaEntrega)}</span>
-          </div>
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-slate-500 flex items-center">
-              <DollarSign className="h-3.5 w-3.5 mr-1.5" />
+          <div className="flex items-center justify-between text-sm pt-3 border-t border-slate-100">
+            <span className="text-slate-600 font-medium flex items-center">
+              <DollarSign className="h-4 w-4 mr-1.5" />
               Costo Total
             </span>
-            <span className="font-semibold text-emerald-600">{formatCurrency(bitacora.costoTotal)}</span>
+            <span className="text-lg font-bold text-emerald-600">{formatCurrency(bitacora.costoTotal)}</span>
           </div>
         </div>
 
         <div className="flex items-center justify-between pt-4 border-t border-slate-100">
           <div className="flex items-center text-xs text-slate-500">
-            <Receipt className="h-3.5 w-3.5 mr-1.5" />
-            {bitacora.numeroFactura || 'Sin factura'}
+            <User className="h-3.5 w-3.5 mr-1.5" />
+            Creado por: #{bitacora.creadoPor}
           </div>
           <div className="flex items-center text-xs text-blue-600 font-medium">
-            <Truck className="h-3.5 w-3.5 mr-1.5" />
+            <Receipt className="h-3.5 w-3.5 mr-1.5" />
             ID: {bitacora.id}
           </div>
         </div>

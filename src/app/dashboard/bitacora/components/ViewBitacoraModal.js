@@ -14,7 +14,7 @@ import {
 } from 'lucide-react'
 import { usersService } from '@/app/services/usersService'
 
-const ViewBitacoraModal = ({ isOpen, onClose, bitacora, viajes, operadores, clientes, unidades }) => {
+const ViewBitacoraModal = ({ isOpen, onClose, bitacora }) => {
   const [creadorNombre, setCreadorNombre] = useState('Cargando...')
 
   useEffect(() => {
@@ -45,17 +45,13 @@ const ViewBitacoraModal = ({ isOpen, onClose, bitacora, viajes, operadores, clie
       weekday: 'long',
       year: 'numeric',
       month: 'long',
-      day: 'numeric'
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
     })
   }
 
   if (!isOpen || !bitacora) return null
-
-  // Buscar información relacionada
-  const viaje = viajes?.find(v => v.id === bitacora.viajeId)
-  const cliente = clientes?.find(c => c.id === bitacora.clienteId)
-  const operador = operadores?.find(o => o.id === bitacora.operadorId)
-  const unidad = unidades?.find(u => u.id === bitacora.unidadId)
 
   return (
     <div className="fixed inset-0 backdrop-blur-xs  bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
@@ -81,102 +77,18 @@ const ViewBitacoraModal = ({ isOpen, onClose, bitacora, viajes, operadores, clie
             </h3>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               <div>
-                <label className="text-xs font-medium text-slate-500">Folio</label>
-                <p className="text-sm text-slate-900 mt-1 font-semibold">{bitacora.folio}</p>
+                <label className="text-xs font-medium text-slate-500">ID de Bitácora</label>
+                <p className="text-sm text-slate-900 mt-1 font-semibold">#{bitacora.id}</p>
               </div>
               <div>
-                <label className="text-xs font-medium text-slate-500">Viaje</label>
-                <p className="text-sm text-slate-900 mt-1">
-                  {viaje ? ` ${viaje.origen} → ${viaje.destino}` : `#${bitacora.viajeId}`}
-                </p>
-              </div>
-              <div>
-                <label className="text-xs font-medium text-slate-500">Cliente</label>
+                <label className="text-xs font-medium text-slate-500">Total de Viajes</label>
                 <p className="text-sm text-slate-900 mt-1 font-medium">
-                  {cliente ? cliente.nombre : `ID #${bitacora.clienteId}`}
+                  {bitacora.totalViajes} viaje{bitacora.totalViajes !== 1 ? 's' : ''}
                 </p>
               </div>
               <div>
-                <label className="text-xs font-medium text-slate-500">Número de Factura</label>
-                <p className="text-sm text-slate-900 mt-1">{bitacora.numeroFactura || 'N/A'}</p>
-              </div>
-              <div>
-                <label className="text-xs font-medium text-slate-500">Folio bitácora</label>
-                <p className="text-sm text-slate-900 mt-1">{bitacora.folio}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Ruta */}
-          <div>
-            <h3 className="text-sm font-semibold text-slate-900 mb-4 flex items-center">
-              <MapPin className="h-4 w-4 mr-2" />
-              Ruta del Viaje
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="text-xs font-medium text-slate-500">Origen</label>
-                <p className="text-sm text-slate-900 mt-1 font-medium">{bitacora.origen}</p>
-              </div>
-              <div>
-                <label className="text-xs font-medium text-slate-500">Destino</label>
-                <p className="text-sm text-slate-900 mt-1 font-medium">{bitacora.destino}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Fechas y Horarios */}
-          <div>
-            <h3 className="text-sm font-semibold text-slate-900 mb-4 flex items-center">
-              <Calendar className="h-4 w-4 mr-2" />
-              Fechas y Horarios
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="text-xs font-medium text-slate-500">Fecha de Carga</label>
-                <p className="text-sm text-slate-900 mt-1">{formatDate(bitacora.fechaCarga)}</p>
-              </div>
-              <div>
-                <label className="text-xs font-medium text-slate-500">Fecha de Entrega</label>
-                <p className="text-sm text-slate-900 mt-1">{formatDate(bitacora.fechaEntrega)}</p>
-              </div>
-              <div>
-                <label className="text-xs font-medium text-slate-500">Hora de Entrega</label>
-                <p className="text-sm text-slate-900 mt-1 flex items-center">
-                  <Clock className="h-3.5 w-3.5 mr-1" />
-                  {bitacora.horaEntrega}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Recursos */}
-          <div>
-            <h3 className="text-sm font-semibold text-slate-900 mb-4 flex items-center">
-              <Truck className="h-4 w-4 mr-2" />
-              Recursos asignados
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="text-xs font-medium text-slate-500">Operador</label>
-                <p className="text-sm text-slate-900 mt-1 flex items-center">
-                  <User className="h-3.5 w-3.5 mr-1" />
-                  {operador ? `${operador.nombre} ` : `ID #${bitacora.operadorId}`}
-                </p>
-              </div>
-              <div>
-                <label className="text-xs font-medium text-slate-500">Unidad</label>
-                <p className="text-sm text-slate-900 mt-1 flex items-center">
-                  <Truck className="h-3.5 w-3.5 mr-1" />
-                  {unidad ? `${unidad.modelo} - ${unidad.placas}` : `ID #${bitacora.unidadId}`}
-                </p>
-              </div>
-              <div>
-                <label className="text-xs font-medium text-slate-500">Caja</label>
-                <p className="text-sm text-slate-900 mt-1 flex items-center">
-                  <Package className="h-3.5 w-3.5 mr-1" />
-                  {bitacora.caja}
-                </p>
+                <label className="text-xs font-medium text-slate-500">Fecha de Creación</label>
+                <p className="text-sm text-slate-900 mt-1">{formatDate(bitacora.creadoEn)}</p>
               </div>
             </div>
           </div>
@@ -185,47 +97,41 @@ const ViewBitacoraModal = ({ isOpen, onClose, bitacora, viajes, operadores, clie
           <div>
             <h3 className="text-sm font-semibold text-slate-900 mb-4 flex items-center">
               <DollarSign className="h-4 w-4 mr-2" />
-              Costos y Gastos
+              Desglose de Gastos
             </h3>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              <div className="bg-slate-50 p-3 rounded-lg">
+            <div className="grid grid-cols-2 md:grid-cols-2 gap-4">
+              <div className="bg-slate-50 p-4 rounded-lg">
                 <label className="text-xs font-medium text-slate-500">Casetas</label>
-                <p className="text-sm text-slate-900 mt-1 font-semibold">{formatCurrency(bitacora.casetas)}</p>
+                <p className="text-lg text-slate-900 mt-1 font-semibold">{formatCurrency(bitacora.casetas)}</p>
               </div>
-              <div className="bg-slate-50 p-3 rounded-lg">
+              <div className="bg-slate-50 p-4 rounded-lg">
                 <label className="text-xs font-medium text-slate-500 flex items-center">
                   <Fuel className="h-3 w-3 mr-1" />
-                  Costo total diesel
+                  Diesel
                 </label>
-                <p className="text-sm text-slate-900 mt-1 font-semibold">${bitacora.dieselLitros}</p>
+                <p className="text-lg text-slate-900 mt-1 font-semibold">{formatCurrency(bitacora.dieselLitros)}</p>
               </div>
-              <div className="bg-slate-50 p-3 rounded-lg">
+              <div className="bg-slate-50 p-4 rounded-lg">
                 <label className="text-xs font-medium text-slate-500">Comisión Operador</label>
-                <p className="text-sm text-slate-900 mt-1 font-semibold">{formatCurrency(bitacora.comisionOperador)}</p>
+                <p className="text-lg text-slate-900 mt-1 font-semibold">{formatCurrency(bitacora.comisionOperador)}</p>
               </div>
-              <div className="bg-slate-50 p-3 rounded-lg">
+              <div className="bg-slate-50 p-4 rounded-lg">
                 <label className="text-xs font-medium text-slate-500">Gastos Extras</label>
-                <p className="text-sm text-slate-900 mt-1 font-semibold">{formatCurrency(bitacora.gastosExtras)}</p>
+                <p className="text-lg text-slate-900 mt-1 font-semibold">{formatCurrency(bitacora.gastosExtras)}</p>
               </div>
-              <div className="bg-emerald-50 p-3 rounded-lg md:col-span-2 border border-emerald-200">
-                <label className="text-xs font-medium text-emerald-700">Costo Total</label>
-                <p className="text-2xl text-emerald-700 mt-1 font-bold">{formatCurrency(bitacora.costoTotal)}</p>
+            </div>
+            
+            {/* Costo Total destacado */}
+            <div className="mt-4 bg-emerald-50 p-6 rounded-lg border-2 border-emerald-200">
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-semibold text-emerald-700 flex items-center">
+                  <DollarSign className="h-5 w-5 mr-2" />
+                  Costo Total de la Bitácora
+                </label>
+                <p className="text-3xl text-emerald-700 font-bold">{formatCurrency(bitacora.costoTotal)}</p>
               </div>
             </div>
           </div>
-
-          {/* Comentarios */}
-          {bitacora.comentarios && (
-            <div>
-              <h3 className="text-sm font-semibold text-slate-900 mb-4 flex items-center">
-                <Package className="h-4 w-4 mr-2" />
-                Comentarios
-              </h3>
-              <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
-                <p className="text-sm text-slate-700 leading-relaxed">{bitacora.comentarios}</p>
-              </div>
-            </div>
-          )}
 
           {/* Información del Sistema */}
           <div>

@@ -54,10 +54,9 @@ export default function BitacoraPage() {
       setFilteredBitacoras(bitacoras)
     } else {
       const filtered = bitacoras.filter(bitacora =>
-        bitacora.folio?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        bitacora.origen?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        bitacora.destino?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        bitacora.numeroFactura?.toLowerCase().includes(searchTerm.toLowerCase())
+        bitacora.id?.toString().includes(searchTerm) ||
+        bitacora.creadoPor?.toString().includes(searchTerm) ||
+        bitacora.totalViajes?.toString().includes(searchTerm)
       )
       setFilteredBitacoras(filtered)
     }
@@ -355,10 +354,6 @@ export default function BitacoraPage() {
           setSelectedBitacora(null)
         }}
         bitacora={selectedBitacora}
-        viajes={viajes}
-        operadores={operadores}
-        clientes={clientes}
-        unidades={unidades}
       />
 
       <ConfirmDeleteModal
