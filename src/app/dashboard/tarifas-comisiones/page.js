@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Search, Plus, DollarSign, MapPin, Users, TrendingUp } from 'lucide-react'
+import { Search, Plus, DollarSign, MapPin, Users, TrendingUp, ChevronLeft, ChevronRight } from 'lucide-react'
 import tarifasComisionesService from '@/app/services/tarifasComisionesService'
 import { clientsService } from '@/app/services/clientsService'
 import toast from 'react-hot-toast'
@@ -21,6 +21,12 @@ export default function TarifasComisionesPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [clienteFilter, setClienteFilter] = useState('')
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(0)
+  const [totalPages, setTotalPages] = useState(0)
+  const [totalElements, setTotalElements] = useState(0)
+  const [pageSize, setPageSize] = useState(20)
+
   // Modals
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
@@ -30,13 +36,13 @@ export default function TarifasComisionesPage() {
 
   useEffect(() => {
     loadInitialData()
-  }, [])
+  }, [currentPage])
 
   const loadInitialData = async () => {
     try {
       setLoading(true)
       await Promise.all([
-        loadRutasComisiones(),
+        loadRutasComisiones(currentPage),
         loadClientes()
       ])
     } catch (error) {
@@ -47,13 +53,26 @@ export default function TarifasComisionesPage() {
     }
   }
 
-  const loadRutasComisiones = async () => {
+  const loadRutasComisiones = async (page = 0) => {
     try {
-      const data = await tarifasComisionesService.getRutasComisiones(0, 100)
-      setRutasComisiones(data.content || data || [])
+      const response = await tarifasComisionesService.getRutasComisiones(page, pageSize)
+
+      if (response.content) {
+        setRutasComisiones(response.content)
+        setTotalPages(response.totalPages)
+        setTotalElements(response.totalElements)
+        setCurrentPage(response.number)
+      } else {
+        // Fallback para cuando no hay paginación
+        const data = Array.isArray(response) ? response : (response.data || [])
+        setRutasComisiones(data)
+        setTotalPages(1)
+        setTotalElements(data.length)
+      }
     } catch (error) {
       console.error('Error loading rutas comisiones:', error)
       toast.error('Error al cargar rutas comisiones')
+      setRutasComisiones([])
     }
   }
 
@@ -71,7 +90,7 @@ export default function TarifasComisionesPage() {
       await tarifasComisionesService.createRutaComision(rutaData)
       toast.success('Ruta comisión creada exitosamente')
       setShowCreateModal(false)
-      loadRutasComisiones()
+      loadRutasComisiones(currentPage)
     } catch (error) {
       toast.error(error.message || 'Error al crear ruta comisión')
       throw error
@@ -89,7 +108,7 @@ export default function TarifasComisionesPage() {
       toast.success('Ruta comisión actualizada exitosamente')
       setShowEditModal(false)
       setSelectedRuta(null)
-      loadRutasComisiones()
+      loadRutasComisiones(currentPage)
     } catch (error) {
       toast.error(error.message || 'Error al actualizar ruta comisión')
       throw error
@@ -112,23 +131,23 @@ export default function TarifasComisionesPage() {
       toast.success('Ruta comisión eliminada exitosamente')
       setShowDeleteModal(false)
       setSelectedRuta(null)
-      loadRutasComisiones()
+      loadRutasComisiones(currentPage)
     } catch (error) {
       toast.error(error.message || 'Error al eliminar ruta comisión')
     }
   }
 
-  // Calcular estadísticas
+  // Calcular estadísticas basadas en los datos de la página actual
   const stats = {
-    total: rutasComisiones.length,
-    clientes: new Set(rutasComisiones.map(r => r.clienteId)).size,
+    total: totalElements, // Usar totalElements del API
+    clientes: new Set(rutasComisiones.map(r => r.cliente?.id || r.clienteId)).size,
     comisionTotal: rutasComisiones.reduce((sum, r) => sum + parseFloat(r.comision || 0), 0),
     comisionPromedio: rutasComisiones.length > 0
       ? rutasComisiones.reduce((sum, r) => sum + parseFloat(r.comision || 0), 0) / rutasComisiones.length
       : 0
   }
 
-  // Filtrar rutas con búsqueda global
+  // Filtrar rutas con búsqueda global (solo en la página actual)
   const filteredRutas = rutasComisiones.filter(ruta => {
     // Obtener el nombre del cliente desde el objeto o buscar en la lista
     const clienteNombre = ruta.cliente?.nombre ||
@@ -246,7 +265,8 @@ export default function TarifasComisionesPage() {
       <div className="flex items-center justify-between">
         <p className="text-sm text-slate-600">
           Mostrando <span className="font-semibold text-slate-900">{filteredRutas.length}</span> de{' '}
-          <span className="font-semibold text-slate-900">{rutasComisiones.length}</span> rutas
+          <span className="font-semibold text-slate-900">{searchTerm || clienteFilter ? rutasComisiones.length : totalElements}</span> rutas
+          {searchTerm || clienteFilter ? ' (filtradas)' : ''}
         </p>
       </div>
 
@@ -283,6 +303,96 @@ export default function TarifasComisionesPage() {
           ))}
         </div>
       )}
+
+      {/* Pagination Controls - Solo mostrar si no hay búsqueda activa */}
+      {totalPages > 1 && !searchTerm.trim() && !clienteFilter && (
+        <div className="flex items-center justify-between border-t border-slate-200 bg-white px-4 py-3 sm:px-6 rounded-xl shadow-sm">
+          <div className="flex flex-1 justify-between sm:hidden">
+            <button
+              onClick={() => setCurrentPage(Math.max(0, currentPage - 1))}
+              disabled={currentPage === 0}
+              className="relative inline-flex items-center rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Anterior
+            </button>
+            <button
+              onClick={() => setCurrentPage(Math.min(totalPages - 1, currentPage + 1))}
+              disabled={currentPage === totalPages - 1}
+              className="relative ml-3 inline-flex items-center rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Siguiente
+            </button>
+          </div>
+          <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+            <div>
+              <p className="text-sm text-slate-700">
+                Mostrando <span className="font-medium">{currentPage * pageSize + 1}</span> a{' '}
+                <span className="font-medium">
+                  {Math.min((currentPage + 1) * pageSize, totalElements)}
+                </span>{' '}
+                de <span className="font-medium">{totalElements}</span> resultados
+              </p>
+            </div>
+            <div>
+              <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
+                <button
+                  onClick={() => setCurrentPage(Math.max(0, currentPage - 1))}
+                  disabled={currentPage === 0}
+                  className="relative inline-flex items-center rounded-l-md px-2 py-2 text-slate-400 ring-1 ring-inset ring-slate-300 hover:bg-slate-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <span className="sr-only">Anterior</span>
+                  <ChevronLeft className="h-5 w-5" aria-hidden="true" />
+                </button>
+                {/* Page numbers */}
+                {[...Array(totalPages)].map((_, index) => {
+                  // Show limited page numbers logic
+                  if (
+                    index === 0 ||
+                    index === totalPages - 1 ||
+                    (index >= currentPage - 1 && index <= currentPage + 1)
+                  ) {
+                    return (
+                      <button
+                        key={index}
+                        onClick={() => setCurrentPage(index)}
+                        aria-current={currentPage === index ? 'page' : undefined}
+                        className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold ${currentPage === index
+                          ? 'z-10 bg-blue-600 text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600'
+                          : 'text-slate-900 ring-1 ring-inset ring-slate-300 hover:bg-slate-50 focus:z-20 focus:outline-offset-0'
+                          }`}
+                      >
+                        {index + 1}
+                      </button>
+                    )
+                  } else if (
+                    index === currentPage - 2 ||
+                    index === currentPage + 2
+                  ) {
+                    return (
+                      <span
+                        key={index}
+                        className="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-slate-700 ring-1 ring-inset ring-slate-300 focus:outline-offset-0"
+                      >
+                        ...
+                      </span>
+                    )
+                  }
+                  return null
+                })}
+                <button
+                  onClick={() => setCurrentPage(Math.min(totalPages - 1, currentPage + 1))}
+                  disabled={currentPage === totalPages - 1}
+                  className="relative inline-flex items-center rounded-r-md px-2 py-2 text-slate-400 ring-1 ring-inset ring-slate-300 hover:bg-slate-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <span className="sr-only">Siguiente</span>
+                  <ChevronRight className="h-5 w-5" aria-hidden="true" />
+                </button>
+              </nav>
+            </div>
+          </div>
+        </div>
+      )}
+
 
       {/* Modals */}
       <CreateRutaComisionModal
