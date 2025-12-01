@@ -49,6 +49,7 @@ const UnidadesPage = () => {
       setFilteredUnidades(unidades)
     } else {
       const filtered = unidades.filter(unidad =>
+        unidad.numeroEconomico?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         unidad.placas?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         unidad.marca?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         unidad.modelo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -222,7 +223,7 @@ const UnidadesPage = () => {
             <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400" />
             <input
               type="text"
-              placeholder="Buscar por placas, marca, modelo o tipo..."
+              placeholder="Buscar por número económico, placas, marca, modelo o tipo..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-900"
@@ -401,7 +402,7 @@ const UnidadesPage = () => {
           setSelectedUnidad(null)
         }}
         onConfirm={handleDelete}
-        unidadPlacas={selectedUnidad?.placas}
+        unidadPlacas={selectedUnidad?.numeroEconomico || selectedUnidad?.placas}
       />
     </div >
   )

@@ -1,20 +1,20 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Truck, Settings, Wrench, Calendar } from 'lucide-react'
+import { Truck, Settings, Shield, AlertCircle } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 const EditUnidadModal = ({ isOpen, onClose, onSave, unidad }) => {
   const [formData, setFormData] = useState({
     placas: '',
+    numeroEconomico: '',
     marca: '',
     modelo: '',
     anio: new Date().getFullYear(),
-    tipo: 'TRACTOCAMION',
+    tipo: 'Tractocamión',
     kilometrajeActual: '',
-    fechaUltimoMto: '',
-    estado: 'ACTIVA',
-    creadoPorId: 1
+    fechaVencimientoSeguros: '',
+    estado: 'ACTIVA'
   })
   const [isLoading, setIsLoading] = useState(false)
 
@@ -22,14 +22,14 @@ const EditUnidadModal = ({ isOpen, onClose, onSave, unidad }) => {
     if (unidad) {
       setFormData({
         placas: unidad.placas || '',
+        numeroEconomico: unidad.numeroEconomico || '',
         marca: unidad.marca || '',
         modelo: unidad.modelo || '',
         anio: unidad.anio || new Date().getFullYear(),
-        tipo: unidad.tipo || 'TRACTOCAMION',
+        tipo: unidad.tipo || 'Tractocamión',
         kilometrajeActual: unidad.kilometrajeActual || '',
-        fechaUltimoMto: unidad.fechaUltimoMto || '',
-        estado: unidad.estado || 'ACTIVA',
-        creadoPorId: unidad.creadoPorId || 1
+        fechaVencimientoSeguros: unidad.fechaVencimientoSeguros || '',
+        estado: unidad.estado || 'ACTIVA'
       })
     }
   }, [unidad])
@@ -41,8 +41,7 @@ const EditUnidadModal = ({ isOpen, onClose, onSave, unidad }) => {
       const dataToSend = {
         ...formData,
         anio: parseInt(formData.anio),
-        kilometrajeActual: parseFloat(formData.kilometrajeActual) || 0,
-        creadoPorId: parseInt(formData.creadoPorId)
+        kilometrajeActual: parseFloat(formData.kilometrajeActual) || 0
       }
       await onSave(unidad.id, dataToSend)
       onClose()
@@ -75,6 +74,22 @@ const EditUnidadModal = ({ isOpen, onClose, onSave, unidad }) => {
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">
                     Número Económico *
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.numeroEconomico}
+                    onChange={(e) => {
+                      const value = e.target.value.toUpperCase()
+                      setFormData({ ...formData, numeroEconomico: value })
+                    }}
+                    className="w-full px-4 py-3 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-900"
+                    maxLength={20}
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Placas *
                   </label>
                   <input
                     type="text"
@@ -146,11 +161,11 @@ const EditUnidadModal = ({ isOpen, onClose, onSave, unidad }) => {
                     className="w-full px-4 py-3 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-900"
                     required
                   >
-                    <option value="TRACTOCAMION">Tractocamión</option>
-                    <option value="CAMION">Camión</option>
-                    <option value="CAMIONETA">Camioneta</option>
-                    <option value="REMOLQUE">Remolque</option>
-                    <option value="SEMIREMOLQUE">Semiremolque</option>
+                    <option value="Tractocamión">Tractocamión</option>
+                    <option value="Camión">Camión</option>
+                    <option value="Camioneta">Camioneta</option>
+                    <option value="Remolque">Remolque</option>
+                    <option value="Semiremolque">Semiremolque</option>
                   </select>
                 </div>
                 <div>
@@ -171,11 +186,11 @@ const EditUnidadModal = ({ isOpen, onClose, onSave, unidad }) => {
               </div>
             </div>
 
-            {/* Mantenimiento */}
+            {/* Seguros */}
             <div>
               <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center">
-                <Wrench className="h-5 w-5 mr-2" />
-                Mantenimiento
+                <Shield className="h-5 w-5 mr-2" />
+                Seguros
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -197,36 +212,13 @@ const EditUnidadModal = ({ isOpen, onClose, onSave, unidad }) => {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">
-                    Fecha último mantenimiento *
+                    Fecha vencimiento seguros
                   </label>
                   <input
                     type="date"
-                    value={formData.fechaUltimoMto}
-                    onChange={(e) => setFormData({ ...formData, fechaUltimoMto: e.target.value })}
+                    value={formData.fechaVencimientoSeguros}
+                    onChange={(e) => setFormData({ ...formData, fechaVencimientoSeguros: e.target.value })}
                     className="w-full px-4 py-3 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-900"
-                    required
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Usuario */}
-            <div>
-              <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center">
-                <Calendar className="h-5 w-5 mr-2" />
-                Información de registro
-              </h3>
-              <div className="grid grid-cols-1 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
-                    Creado por (ID Usuario) *
-                  </label>
-                  <input
-                    type="number"
-                    value={formData.creadoPorId}
-                    onChange={(e) => setFormData({ ...formData, creadoPorId: e.target.value })}
-                    className="w-full px-4 py-3 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-900"
-                    required
                   />
                 </div>
               </div>

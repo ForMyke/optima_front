@@ -1,22 +1,14 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import {
   Users as UsersIcon,
   UserPlus,
   Search,
-  Filter,
-  MoreVertical,
-  Edit2,
-  Trash2,
   Building2,
-  Mail,
-  Phone,
-  Calendar,
-  MapPin,
-  FileText,
-  Eye,
-  FileDown
+  FileDown,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { clientsService } from '@/app/services/clientsService'
@@ -26,8 +18,13 @@ import { exportClientesPDF } from '@/utils/pdfExport'
 
 const ClientesPage = () => {
   const [clients, setClients] = useState([])
+  const [filteredClients, setFilteredClients] = useState([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
+  const [currentPage, setCurrentPage] = useState(0)
+  const [totalPages, setTotalPages] = useState(0)
+  const [totalElements, setTotalElements] = useState(0)
+  const [pageSize] = useState(20)
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
   const [showViewModal, setShowViewModal] = useState(false)
@@ -38,42 +35,63 @@ const ClientesPage = () => {
     total: 0
   })
 
-  const loadClients = async () => {
-    try {
-      const response = await clientsService.getClients(0, 100)
-      const clientsData = response.content || []
-      setClients(clientsData)
+  useEffect(() => {
+    loadClients(currentPage)
+  }, [currentPage])
 
-      setStats({
-        total: response.totalElements || clientsData.length
-      })
+  useEffect(() => {
+    if (searchTerm.trim() === '') {
+      setFilteredClients(clients)
+    } else {
+      const filtered = clients.filter(client =>
+        client.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        client.rfc?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        client.correo?.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+      setFilteredClients(filtered)
+    }
+  }, [searchTerm, clients])
+
+  const loadClients = async (page = 0) => {
+    try {
+      setLoading(true)
+      const response = await clientsService.getClients(page, pageSize)
+
+      if (response.content) {
+        setClients(response.content)
+        setFilteredClients(response.content)
+        setTotalPages(response.totalPages)
+        setTotalElements(response.totalElements)
+        setCurrentPage(response.number)
+
+        setStats({
+          total: response.totalElements
+        })
+      } else {
+        const data = Array.isArray(response) ? response : (response.data || [])
+        setClients(data)
+        setFilteredClients(data)
+        setTotalPages(1)
+        setTotalElements(data.length)
+        setStats({
+          total: data.length
+        })
+      }
     } catch (error) {
       console.error('Error loading clients:', error)
       toast.error('Error al cargar clientes')
+      setClients([])
+      setFilteredClients([])
+    } finally {
+      setLoading(false)
     }
   }
-
-  useEffect(() => {
-    const loadInitialData = async () => {
-      try {
-        setLoading(true)
-        await loadClients()
-      } catch (error) {
-        console.error('Error loading initial data:', error)
-        toast.error('Error al cargar datos iniciales')
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    loadInitialData()
-  }, [])
 
   const handleCreateClient = async (clientData) => {
     try {
       await clientsService.createClient(clientData)
       toast.success('Cliente creado exitosamente')
-      loadClients()
+      loadClients(currentPage)
     } catch (error) {
       toast.error(error.message || 'Error al crear cliente')
       throw error
@@ -96,7 +114,7 @@ const ClientesPage = () => {
       toast.success('Cliente actualizado exitosamente')
       setShowEditModal(false)
       setSelectedClient(null)
-      loadClients()
+      loadClients(currentPage)
     } catch (error) {
       toast.error(error.message || 'Error al actualizar cliente')
       throw error
@@ -116,7 +134,7 @@ const ClientesPage = () => {
       toast.success(`Cliente ${clientToDelete.nombre} eliminado`)
       setShowDeleteModal(false)
       setClientToDelete(null)
-      loadClients()
+      loadClients(currentPage)
     } catch (error) {
       toast.error(error.message || 'Error al eliminar cliente')
     }
@@ -131,13 +149,6 @@ const ClientesPage = () => {
       toast.error('Error al cargar detalles del cliente')
     }
   }
-
-  const filteredClients = clients.filter(client => {
-    const matchesSearch = client.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      client.rfc.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      client.correo.toLowerCase().includes(searchTerm.toLowerCase())
-    return matchesSearch
-  })
 
   if (loading) {
     return (
@@ -190,27 +201,6 @@ const ClientesPage = () => {
           color="bg-blue-600"
           description="Clientes registrados"
         />
-        <StatCard
-          title="Activos este mes"
-          value={stats.total}
-          icon={Building2}
-          color="bg-emerald-600"
-          description="Con operaciones"
-        />
-        <StatCard
-          title="Nuevos este mes"
-          value="0"
-          icon={UserPlus}
-          color="bg-purple-600"
-          description="Registros recientes"
-        />
-        <StatCard
-          title="Por contactar"
-          value="0"
-          icon={Phone}
-          color="bg-orange-600"
-          description="Pendientes"
-        />
       </div>
 
       {/* Search */}
@@ -244,6 +234,93 @@ const ClientesPage = () => {
         <div className="text-center py-12">
           <Building2 className="h-12 w-12 text-slate-300 mx-auto mb-4" />
           <p className="text-slate-500">No se encontraron clientes</p>
+        </div>
+      )}
+
+      {/* Pagination Controls */}
+      {totalPages > 1 && !searchTerm.trim() && (
+        <div className="flex items-center justify-between border-t border-slate-200 bg-white px-4 py-3 sm:px-6 rounded-xl shadow-sm mt-6">
+          <div className="flex flex-1 justify-between sm:hidden">
+            <button
+              onClick={() => setCurrentPage(Math.max(0, currentPage - 1))}
+              disabled={currentPage === 0}
+              className="relative inline-flex items-center rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Anterior
+            </button>
+            <button
+              onClick={() => setCurrentPage(Math.min(totalPages - 1, currentPage + 1))}
+              disabled={currentPage === totalPages - 1}
+              className="relative ml-3 inline-flex items-center rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Siguiente
+            </button>
+          </div>
+          <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+            <div>
+              <p className="text-sm text-slate-700">
+                Mostrando <span className="font-medium">{currentPage * pageSize + 1}</span> a{' '}
+                <span className="font-medium">
+                  {Math.min((currentPage + 1) * pageSize, totalElements)}
+                </span>{' '}
+                de <span className="font-medium">{totalElements}</span> resultados
+              </p>
+            </div>
+            <div>
+              <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
+                <button
+                  onClick={() => setCurrentPage(Math.max(0, currentPage - 1))}
+                  disabled={currentPage === 0}
+                  className="relative inline-flex items-center rounded-l-md px-2 py-2 text-slate-400 ring-1 ring-inset ring-slate-300 hover:bg-slate-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <span className="sr-only">Anterior</span>
+                  <ChevronLeft className="h-5 w-5" aria-hidden="true" />
+                </button>
+                {[...Array(totalPages)].map((_, index) => {
+                  if (
+                    index === 0 ||
+                    index === totalPages - 1 ||
+                    (index >= currentPage - 1 && index <= currentPage + 1)
+                  ) {
+                    return (
+                      <button
+                        key={index}
+                        onClick={() => setCurrentPage(index)}
+                        aria-current={currentPage === index ? 'page' : undefined}
+                        className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold ${currentPage === index
+                          ? 'z-10 bg-blue-600 text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600'
+                          : 'text-slate-900 ring-1 ring-inset ring-slate-300 hover:bg-slate-50 focus:z-20 focus:outline-offset-0'
+                          }`}
+                      >
+                        {index + 1}
+                      </button>
+                    )
+                  } else if (
+                    index === currentPage - 2 ||
+                    index === currentPage + 2
+                  ) {
+                    return (
+                      <span
+                        key={index}
+                        className="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-slate-700 ring-1 ring-inset ring-slate-300 focus:outline-offset-0"
+                      >
+                        ...
+                      </span>
+                    )
+                  }
+                  return null
+                })}
+                <button
+                  onClick={() => setCurrentPage(Math.min(totalPages - 1, currentPage + 1))}
+                  disabled={currentPage === totalPages - 1}
+                  className="relative inline-flex items-center rounded-r-md px-2 py-2 text-slate-400 ring-1 ring-inset ring-slate-300 hover:bg-slate-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <span className="sr-only">Siguiente</span>
+                  <ChevronRight className="h-5 w-5" aria-hidden="true" />
+                </button>
+              </nav>
+            </div>
+          </div>
         </div>
       )}
 

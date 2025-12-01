@@ -12,11 +12,9 @@ const EditNominaModal = ({ isOpen, onClose, onSubmit, nomina, operadores }) => {
         compensacion: '',
         descuentos: '',
         numeroViajes: '',
-        nombre: '',
         alias: '',
         cuenta: '',
-        observaciones: '',
-        creadoPor: 1
+        observaciones: ''
     })
 
     const [errors, setErrors] = useState({})
@@ -34,11 +32,9 @@ const EditNominaModal = ({ isOpen, onClose, onSubmit, nomina, operadores }) => {
                 compensacion: nomina.compensacion || '',
                 descuentos: nomina.descuentos || '',
                 numeroViajes: nomina.numeroViajes || '',
-                nombre: nomina.nombre || '',
                 alias: nomina.alias || '',
                 cuenta: nomina.cuenta || '',
-                observaciones: nomina.observaciones || '',
-                creadoPor: nomina.creadoPor || 1
+                observaciones: nomina.observaciones || ''
             })
             setErrors({})
         }
@@ -81,9 +77,7 @@ const EditNominaModal = ({ isOpen, onClose, onSubmit, nomina, operadores }) => {
             newErrors.sueldoBase = 'El sueldo base debe ser mayor o igual a 0'
         }
 
-        if (!formData.nombre.trim()) {
-            newErrors.nombre = 'El nombre es requerido'
-        }
+
 
         setErrors(newErrors)
         return Object.keys(newErrors).length === 0
@@ -111,15 +105,14 @@ const EditNominaModal = ({ isOpen, onClose, onSubmit, nomina, operadores }) => {
             periodoFin: formData.periodoFin,
             sueldoBase: parseFloat(formData.sueldoBase),
             comisionViajes: parseFloat(formData.comisionViajes) || 0,
+            total: total.toString(),
             bono: parseFloat(formData.bono) || 0,
             compensacion: parseFloat(formData.compensacion) || 0,
             descuentos: parseFloat(formData.descuentos) || 0,
             numeroViajes: parseInt(formData.numeroViajes) || 0,
-            nombre: formData.nombre.trim(),
             alias: formData.alias.trim(),
-            cuenta: formData.cuenta.trim(),
-            observaciones: formData.observaciones.trim(),
-            creadoPor: formData.creadoPor
+            cuenta: parseInt(formData.cuenta) || 0,
+            observaciones: formData.observaciones.trim()
         }
 
         await onSubmit(nomina.id, nominaData)
@@ -228,28 +221,7 @@ const EditNominaModal = ({ isOpen, onClose, onSubmit, nomina, operadores }) => {
                     </div>
 
                     {/* Datos del Operador */}
-                    <div className="grid grid-cols-3 gap-4">
-                        <div>
-                            <label className="block text-sm font-semibold text-slate-700 mb-2">
-                                Nombre <span className="text-red-500">*</span>
-                            </label>
-                            <input
-                                type="text"
-                                name="nombre"
-                                value={formData.nombre}
-                                onChange={handleChange}
-                                placeholder="Nombre completo"
-                                className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${errors.nombre ? 'border-red-300' : 'border-slate-300'
-                                    }`}
-                            />
-                            {errors.nombre && (
-                                <p className="mt-1 text-sm text-red-600 flex items-center space-x-1">
-                                    <AlertCircle className="h-4 w-4" />
-                                    <span>{errors.nombre}</span>
-                                </p>
-                            )}
-                        </div>
-
+                    <div className="grid grid-cols-2 gap-4">
                         <div>
                             <label className="block text-sm font-semibold text-slate-700 mb-2">
                                 Alias
@@ -271,7 +243,7 @@ const EditNominaModal = ({ isOpen, onClose, onSubmit, nomina, operadores }) => {
                             <div className="relative">
                                 <CreditCard className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
                                 <input
-                                    type="text"
+                                    type="number"
                                     name="cuenta"
                                     value={formData.cuenta}
                                     onChange={handleChange}

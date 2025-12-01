@@ -9,7 +9,9 @@ import {
   Clock,
   XCircle,
   Filter,
-  FileDown
+  FileDown,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { facturaService } from '@/app/services/facturaService'
@@ -19,6 +21,7 @@ import { exportFacturasPDF } from '@/utils/pdfExport'
 
 const FacturasPage = () => {
   const [facturas, setFacturas] = useState([])
+  const [filteredFacturas, setFilteredFacturas] = useState([])
   const [clientes, setClientes] = useState([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
@@ -29,6 +32,13 @@ const FacturasPage = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [selectedFactura, setSelectedFactura] = useState(null)
   const [facturaToDelete, setFacturaToDelete] = useState(null)
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(0)
+  const [totalPages, setTotalPages] = useState(0)
+  const [totalElements, setTotalElements] = useState(0)
+  const [pageSize] = useState(15)
+
   const [stats, setStats] = useState({
     total: 0,
     pagadas: 0,
@@ -37,29 +47,73 @@ const FacturasPage = () => {
     totalMonto: 0
   })
 
-  const loadFacturas = async () => {
+  useEffect(() => {
+    loadInitialData()
+  }, [])
+
+  useEffect(() => {
+    loadFacturas(currentPage)
+  }, [currentPage])
+
+  useEffect(() => {
+    filterFacturas()
+  }, [searchTerm, filterEstatus, facturas])
+
+  const loadInitialData = async () => {
     try {
-      const response = await facturaService.getFacturas(0, 100)
-      const facturasData = response.content || []
-      setFacturas(facturasData)
+      setLoading(true)
+      await Promise.all([loadFacturas(0), loadClientes()])
+    } catch (error) {
+      console.error('Error loading initial data:', error)
+      toast.error('Error al cargar datos iniciales')
+    } finally {
+      setLoading(false)
+    }
+  }
 
-      // Calcular estadísticas
-      const pagadas = facturasData.filter(f => f.estatus === 'PAGADA').length
-      const pendientes = facturasData.filter(f => f.estatus === 'PENDIENTE').length
-      const vencidas = facturasData.filter(f => f.estatus === 'VENCIDA').length
-      const totalMonto = facturasData.reduce((sum, f) => sum + (f.monto || 0), 0)
+  const loadFacturas = async (page = 0) => {
+    try {
+      setLoading(true)
+      const response = await facturaService.getFacturas(page, pageSize)
 
-      setStats({
-        total: response.totalElements || facturasData.length,
-        pagadas,
-        pendientes,
-        vencidas,
-        totalMonto
-      })
+      if (response.content) {
+        setFacturas(response.content)
+        setTotalPages(response.totalPages)
+        setTotalElements(response.totalElements)
+        setCurrentPage(response.number)
+
+        // Calcular estadísticas con los datos disponibles
+        // Nota: Para estadísticas precisas de toda la base de datos, el backend debería proveer un endpoint de stats
+        updateStats(response.content, response.totalElements)
+      } else {
+        const data = Array.isArray(response) ? response : (response.data || [])
+        setFacturas(data)
+        setTotalPages(1)
+        setTotalElements(data.length)
+        updateStats(data, data.length)
+      }
     } catch (error) {
       console.error('Error loading facturas:', error)
       toast.error('Error al cargar facturas')
+      setFacturas([])
+    } finally {
+      setLoading(false)
     }
+  }
+
+  const updateStats = (data, total) => {
+    const pagadas = data.filter(f => f.estatus === 'PAGADA').length
+    const pendientes = data.filter(f => f.estatus === 'PENDIENTE').length
+    const vencidas = data.filter(f => f.estatus === 'VENCIDA').length
+    const totalMonto = data.reduce((sum, f) => sum + (f.monto || 0), 0)
+
+    setStats({
+      total: total,
+      pagadas,
+      pendientes,
+      vencidas,
+      totalMonto
+    })
   }
 
   const loadClientes = async () => {
@@ -72,21 +126,18 @@ const FacturasPage = () => {
     }
   }
 
-  useEffect(() => {
-    const loadInitialData = async () => {
-      try {
-        setLoading(true)
-        await Promise.all([loadFacturas(), loadClientes()])
-      } catch (error) {
-        console.error('Error loading initial data:', error)
-        toast.error('Error al cargar datos iniciales')
-      } finally {
-        setLoading(false)
-      }
-    }
+  const filterFacturas = () => {
+    const filtered = facturas.filter(factura => {
+      const matchesSearch =
+        factura.numeroFactura?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        factura.observaciones?.toLowerCase().includes(searchTerm.toLowerCase())
 
-    loadInitialData()
-  }, [])
+      const matchesFilter = filterEstatus === 'TODAS' || factura.estatus === filterEstatus
+
+      return matchesSearch && matchesFilter
+    })
+    setFilteredFacturas(filtered)
+  }
 
   const handlePagarFactura = (factura) => {
     setSelectedFactura(factura)
@@ -119,7 +170,7 @@ const FacturasPage = () => {
 
       setShowPagarModal(false)
       setSelectedFactura(null)
-      loadFacturas()
+      loadFacturas(currentPage)
     } catch (error) {
       toast.error(error.message || 'Error al registrar pago')
       throw error
@@ -157,7 +208,7 @@ const FacturasPage = () => {
 
       setShowPagoParcialModal(false)
       setSelectedFactura(null)
-      loadFacturas()
+      loadFacturas(currentPage)
     } catch (error) {
       toast.error(error.message || 'Error al registrar pago parcial')
       throw error
@@ -191,7 +242,7 @@ const FacturasPage = () => {
       }
       await facturaService.updateFacturaEstatus(factura.id, facturaActualizada)
       toast.success(`Estado actualizado a ${nuevoEstatus}`)
-      loadFacturas()
+      loadFacturas(currentPage)
     } catch (error) {
       toast.error(error.message || 'Error al actualizar estado')
     }
@@ -215,23 +266,13 @@ const FacturasPage = () => {
       toast.success(`Factura ${facturaToDelete.numeroFactura} eliminada exitosamente`)
       setShowDeleteModal(false)
       setFacturaToDelete(null)
-      loadFacturas()
+      loadFacturas(currentPage)
     } catch (error) {
       toast.error(error.message || 'Error al eliminar factura')
     }
   }
 
-  const filteredFacturas = facturas.filter(factura => {
-    const matchesSearch =
-      factura.numeroFactura?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      factura.observaciones?.toLowerCase().includes(searchTerm.toLowerCase())
-
-    const matchesFilter = filterEstatus === 'TODAS' || factura.estatus === filterEstatus
-
-    return matchesSearch && matchesFilter
-  })
-
-  if (loading) {
+  if (loading && facturas.length === 0) {
     return (
       <div className="p-4 lg:p-6 bg-slate-50 min-h-screen">
         <div className="animate-pulse">
@@ -265,7 +306,7 @@ const FacturasPage = () => {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 lg:gap-6 mb-6 lg:mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-6 lg:mb-8">
         <StatCard
           title="Total facturas"
           value={stats.total}
@@ -293,13 +334,6 @@ const FacturasPage = () => {
           icon={XCircle}
           color="bg-red-600"
           description="Requieren atención"
-        />
-        <StatCard
-          title="Monto total"
-          value={`$${stats.totalMonto.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-          icon={DollarSign}
-          color="bg-purple-600"
-          description="Suma de todas las facturas"
         />
       </div>
 
@@ -333,6 +367,14 @@ const FacturasPage = () => {
         </div>
       </div>
 
+      {/* Results count */}
+      <div className="flex items-center justify-between mb-4">
+        <p className="text-sm text-slate-600">
+          Mostrando <span className="font-semibold text-slate-900">{filteredFacturas.length}</span> de{' '}
+          <span className="font-semibold text-slate-900">{totalElements}</span> facturas
+        </p>
+      </div>
+
       {/* Facturas Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 lg:gap-6">
         {filteredFacturas.map((factura) => (
@@ -353,6 +395,93 @@ const FacturasPage = () => {
         <div className="text-center py-12">
           <FileText className="h-12 w-12 text-slate-300 mx-auto mb-4" />
           <p className="text-slate-500">No se encontraron facturas</p>
+        </div>
+      )}
+
+      {/* Pagination Controls */}
+      {totalPages > 1 && !searchTerm.trim() && filterEstatus === 'TODAS' && (
+        <div className="flex items-center justify-between border-t border-slate-200 bg-white px-4 py-3 sm:px-6 rounded-xl shadow-sm mt-6">
+          <div className="flex flex-1 justify-between sm:hidden">
+            <button
+              onClick={() => setCurrentPage(Math.max(0, currentPage - 1))}
+              disabled={currentPage === 0}
+              className="relative inline-flex items-center rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Anterior
+            </button>
+            <button
+              onClick={() => setCurrentPage(Math.min(totalPages - 1, currentPage + 1))}
+              disabled={currentPage === totalPages - 1}
+              className="relative ml-3 inline-flex items-center rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Siguiente
+            </button>
+          </div>
+          <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+            <div>
+              <p className="text-sm text-slate-700">
+                Mostrando <span className="font-medium">{currentPage * pageSize + 1}</span> a{' '}
+                <span className="font-medium">
+                  {Math.min((currentPage + 1) * pageSize, totalElements)}
+                </span>{' '}
+                de <span className="font-medium">{totalElements}</span> resultados
+              </p>
+            </div>
+            <div>
+              <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
+                <button
+                  onClick={() => setCurrentPage(Math.max(0, currentPage - 1))}
+                  disabled={currentPage === 0}
+                  className="relative inline-flex items-center rounded-l-md px-2 py-2 text-slate-400 ring-1 ring-inset ring-slate-300 hover:bg-slate-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <span className="sr-only">Anterior</span>
+                  <ChevronLeft className="h-5 w-5" aria-hidden="true" />
+                </button>
+                {[...Array(totalPages)].map((_, index) => {
+                  if (
+                    index === 0 ||
+                    index === totalPages - 1 ||
+                    (index >= currentPage - 1 && index <= currentPage + 1)
+                  ) {
+                    return (
+                      <button
+                        key={index}
+                        onClick={() => setCurrentPage(index)}
+                        aria-current={currentPage === index ? 'page' : undefined}
+                        className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold ${currentPage === index
+                          ? 'z-10 bg-blue-600 text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600'
+                          : 'text-slate-900 ring-1 ring-inset ring-slate-300 hover:bg-slate-50 focus:z-20 focus:outline-offset-0'
+                          }`}
+                      >
+                        {index + 1}
+                      </button>
+                    )
+                  } else if (
+                    index === currentPage - 2 ||
+                    index === currentPage + 2
+                  ) {
+                    return (
+                      <span
+                        key={index}
+                        className="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-slate-700 ring-1 ring-inset ring-slate-300 focus:outline-offset-0"
+                      >
+                        ...
+                      </span>
+                    )
+                  }
+                  return null
+                })}
+                <button
+                  onClick={() => setCurrentPage(Math.min(totalPages - 1, currentPage + 1))}
+                  disabled={currentPage === totalPages - 1}
+                  className="relative inline-flex items-center rounded-r-md px-2 py-2 text-slate-400 ring-1 ring-inset ring-slate-300 hover:bg-slate-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <span className="sr-only">Siguiente</span>
+                  <ChevronRight className="h-5 w-5" aria-hidden="true" />
+                </button>
+              </nav>
+            </div>
+          </div>
         </div>
       )}
 

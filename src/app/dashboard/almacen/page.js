@@ -182,30 +182,6 @@ const AlmacenPage = () => {
         </div>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6 mb-6 lg:mb-8">
-        <StatCard
-          title="Total almacenes"
-          value={stats.total}
-          icon={Warehouse}
-          color="bg-blue-600"
-          description="Registrados en el sistema"
-        />
-        <StatCard
-          title="Con encargado"
-          value={stats.conEncargado}
-          icon={User}
-          color="bg-emerald-600"
-          description="Tienen responsable asignado"
-        />
-        <StatCard
-          title="Sin encargado"
-          value={stats.sinEncargado}
-          icon={Package}
-          color="bg-orange-600"
-          description="Requieren asignación"
-        />
-      </div>
 
       {/* Search */}
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 lg:p-6 mb-4 lg:mb-6">

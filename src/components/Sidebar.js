@@ -49,6 +49,7 @@ const availablePages = [
     '/dashboard/resumen-gastos',
     '/dashboard/historico',
     '/dashboard/nomina-operativa',
+    '/dashboard/nomina-fija',
 ]
 
 const menuItems = [

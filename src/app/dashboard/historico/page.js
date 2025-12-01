@@ -213,13 +213,7 @@ export default function HistoricoPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard
-          title="Total de Movimientos"
-          value={stats.total}
-          icon={ArrowRightLeft}
-          color="bg-blue-600"
-        />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6">
         <StatCard
           title="Entradas"
           value={stats.entradas}
@@ -231,12 +225,6 @@ export default function HistoricoPage() {
           value={stats.salidas}
           icon={Package}
           color="bg-red-600"
-        />
-        <StatCard
-          title="Transferencias"
-          value={stats.transferencias}
-          icon={ArrowRightLeft}
-          color="bg-purple-600"
         />
       </div>
 

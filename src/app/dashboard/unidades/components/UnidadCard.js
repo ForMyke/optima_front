@@ -11,7 +11,7 @@ import {
   AlertCircle,
   CheckCircle,
   Settings,
-  Wrench
+  Shield
 } from 'lucide-react'
 
 const UnidadCard = ({ unidad, onEdit, onDelete, onViewDetails }) => {
@@ -66,11 +66,12 @@ const UnidadCard = ({ unidad, onEdit, onDelete, onViewDetails }) => {
             </div>
             <div className="flex-1">
               <div className="flex items-center space-x-2 mb-1">
-                <h3 className="text-lg font-semibold text-slate-900">{unidad.placas}</h3>
+                <h3 className="text-lg font-semibold text-slate-900">{unidad.numeroEconomico || 'N/A'}</h3>
                 <span className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium ${getEstadoColor(unidad.estado)}`}>
                   {unidad.estado}
                 </span>
               </div>
+              <p className="text-xs text-slate-500 mb-1">Placas: {unidad.placas || 'N/A'}</p>
               <p className="text-sm text-slate-500">{unidad.marca} {unidad.modelo} {unidad.anio}</p>
             </div>
           </div>
@@ -136,10 +137,10 @@ const UnidadCard = ({ unidad, onEdit, onDelete, onViewDetails }) => {
           </div>
           <div className="flex items-center justify-between text-sm">
             <span className="text-slate-500 flex items-center">
-              <Wrench className="h-3.5 w-3.5 mr-1.5" />
-              Último Mto.
+              <Shield className="h-3.5 w-3.5 mr-1.5" />
+              Venc. Seguros
             </span>
-            <span className="font-medium text-slate-900">{formatDate(unidad.fechaUltimoMto)}</span>
+            <span className="font-medium text-slate-900">{formatDate(unidad.fechaVencimientoSeguros)}</span>
           </div>
         </div>
 

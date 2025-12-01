@@ -295,7 +295,7 @@ const UsuariosPage = () => {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
         <StatCard
           title="Total usuarios"
           value={stats.total}
@@ -316,13 +316,6 @@ const UsuariosPage = () => {
           icon={XCircle}
           color="bg-red-600"
           description="Desactivados"
-        />
-        <StatCard
-          title="Administradores"
-          value={stats.admins}
-          icon={Shield}
-          color="bg-purple-600"
-          description="Con permisos admin"
         />
       </div>
 

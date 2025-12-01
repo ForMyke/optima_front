@@ -29,9 +29,11 @@ const LiquidacionEfectivoPage = () => {
   const [facturaToDelete, setFacturaToDelete] = useState(null)
   const [stats, setStats] = useState({
     total: 0,
-    pagadas: 0,
     pendientes: 0,
-    totalMonto: 0
+    pagadas: 0,
+    vencidas: 0,
+    totalMonto: 0,
+    montoPendiente: 0
   })
 
   const loadFacturas = async () => {
@@ -42,15 +44,21 @@ const LiquidacionEfectivoPage = () => {
       setFacturas(facturasData)
 
       // Calcular estadísticas
-      const pagadas = facturasData.filter(f => f.estatus === 'PAGADA').length
       const pendientes = facturasData.filter(f => f.estatus === 'PENDIENTE').length
-      const totalMonto = facturasData.reduce((sum, f) => sum + (f.monto || 0), 0)
+      const pagadas = facturasData.filter(f => f.estatus === 'PAGADA').length
+      const vencidas = facturasData.filter(f => f.estatus === 'VENCIDA').length
+      const totalMonto = facturasData.reduce((sum, f) => sum + (parseFloat(f.monto) || 0), 0)
+      const montoPendiente = facturasData
+        .filter(f => f.estatus === 'PENDIENTE' || f.estatus === 'VENCIDA')
+        .reduce((sum, f) => sum + (parseFloat(f.monto) || 0), 0)
 
       setStats({
         total: response.totalElements || facturasData.length,
-        pagadas,
         pendientes,
-        totalMonto
+        pagadas,
+        vencidas,
+        totalMonto,
+        montoPendiente
       })
     } catch (error) {
       console.error('Error loading facturas efectivo:', error)
@@ -213,28 +221,32 @@ const LiquidacionEfectivoPage = () => {
       {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-6 lg:mb-8">
         <StatCard
-          title="Total facturas"
+          title="Total de facturas"
           value={stats.total}
           icon={FileText}
-          color="blue"
-        />
-        <StatCard
-          title="Pagadas"
-          value={stats.pagadas}
-          icon={CheckCircle}
-          color="green"
+          color="bg-blue-600"
+          description="Facturas registradas"
         />
         <StatCard
           title="Pendientes"
           value={stats.pendientes}
           icon={Clock}
-          color="orange"
+          color="bg-orange-600"
+          description="Por pagar"
         />
         <StatCard
-          title="Monto total"
-          value={`$${stats.totalMonto.toLocaleString('es-MX', { minimumFractionDigits: 2 })}`}
-          icon={DollarSign}
-          color="purple"
+          title="Pagadas"
+          value={stats.pagadas}
+          icon={CheckCircle}
+          color="bg-green-600"
+          description="Completadas"
+        />
+        <StatCard
+          title="Vencidas"
+          value={stats.vencidas}
+          icon={XCircle}
+          color="bg-red-600"
+          description="Facturas vencidas"
         />
       </div>
 

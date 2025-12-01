@@ -1,7 +1,11 @@
 import { useState, useEffect } from 'react'
 import { X, Save, User, Calendar, DollarSign, Hash, FileText, AlertCircle, CreditCard } from 'lucide-react'
+import { authService } from '@/app/services/authService'
+import { viajesService } from '@/app/services/viajesService'
 
 const CreateNominaModal = ({ isOpen, onClose, onSubmit, operadores }) => {
+    const [currentUserId, setCurrentUserId] = useState(null)
+    const [loadingViajes, setLoadingViajes] = useState(false)
     const [formData, setFormData] = useState({
         operadorId: '',
         periodoInicio: '',
@@ -12,12 +16,57 @@ const CreateNominaModal = ({ isOpen, onClose, onSubmit, operadores }) => {
         compensacion: '',
         descuentos: '',
         numeroViajes: '',
-        nombre: '',
         alias: '',
         cuenta: '',
-        observaciones: '',
-        creadoPor: 1 // TODO: Obtener del usuario actual
+        observaciones: ''
     })
+
+    // Obtener el usuario logueado al montar el componente
+    useEffect(() => {
+        const user = authService.getUser()
+        if (user && user.id) {
+            setCurrentUserId(user.id)
+        }
+    }, [])
+
+    // Calcular número de viajes automáticamente cuando cambian operador o fechas
+    useEffect(() => {
+        const calcularNumeroViajes = async () => {
+            // Solo calcular si tenemos operador y ambas fechas
+            if (!formData.operadorId || !formData.periodoInicio || !formData.periodoFin) {
+                return
+            }
+
+            try {
+                setLoadingViajes(true)
+                // Obtener todos los viajes del operador (sin paginación para contar todos)
+                const response = await viajesService.getViajesByOperador(formData.operadorId, 0, 1000)
+                const viajes = response.content || response || []
+
+                // Filtrar viajes que estén dentro del periodo
+                const fechaInicio = new Date(formData.periodoInicio)
+                const fechaFin = new Date(formData.periodoFin)
+
+                const viajesEnPeriodo = viajes.filter(viaje => {
+                    const fechaSalida = new Date(viaje.fechaSalida)
+                    return fechaSalida >= fechaInicio && fechaSalida <= fechaFin
+                })
+
+                // Actualizar el número de viajes
+                setFormData(prev => ({
+                    ...prev,
+                    numeroViajes: viajesEnPeriodo.length.toString()
+                }))
+            } catch (error) {
+                console.error('Error al calcular número de viajes:', error)
+                // No mostramos error al usuario, simplemente no se auto-completa
+            } finally {
+                setLoadingViajes(false)
+            }
+        }
+
+        calcularNumeroViajes()
+    }, [formData.operadorId, formData.periodoInicio, formData.periodoFin])
 
     const [errors, setErrors] = useState({})
     const [total, setTotal] = useState(0)
@@ -34,11 +83,9 @@ const CreateNominaModal = ({ isOpen, onClose, onSubmit, operadores }) => {
                 compensacion: '',
                 descuentos: '',
                 numeroViajes: '',
-                nombre: '',
                 alias: '',
                 cuenta: '',
-                observaciones: '',
-                creadoPor: 1
+                observaciones: ''
             })
             setErrors({})
             setTotal(0)
@@ -64,7 +111,6 @@ const CreateNominaModal = ({ isOpen, onClose, onSubmit, operadores }) => {
             if (operador) {
                 setFormData(prev => ({
                     ...prev,
-                    nombre: operador.nombre || '',
                     alias: operador.alias || '',
                     cuenta: operador.cuenta || ''
                 }))
@@ -97,8 +143,8 @@ const CreateNominaModal = ({ isOpen, onClose, onSubmit, operadores }) => {
             newErrors.sueldoBase = 'El sueldo base debe ser mayor o igual a 0'
         }
 
-        if (!formData.nombre.trim()) {
-            newErrors.nombre = 'El nombre es requerido'
+        if (!currentUserId) {
+            newErrors.general = 'No se pudo obtener el usuario actual'
         }
 
         setErrors(newErrors)
@@ -122,22 +168,26 @@ const CreateNominaModal = ({ isOpen, onClose, onSubmit, operadores }) => {
             return
         }
 
+        // Crear la fecha actual en formato ISO
+        const now = new Date()
+        const creadoEn = now.toISOString()
+
         const nominaData = {
             operadorId: parseInt(formData.operadorId),
             periodoInicio: formData.periodoInicio,
             periodoFin: formData.periodoFin,
             sueldoBase: parseFloat(formData.sueldoBase),
             comisionViajes: parseFloat(formData.comisionViajes) || 0,
+            total: total.toString(),
             bono: parseFloat(formData.bono) || 0,
             compensacion: parseFloat(formData.compensacion) || 0,
             descuentos: parseFloat(formData.descuentos) || 0,
             numeroViajes: parseInt(formData.numeroViajes) || 0,
-            nombre: formData.nombre.trim(),
             alias: formData.alias.trim(),
-            cuenta: formData.cuenta.trim(),
+            cuenta: parseInt(formData.cuenta) || 0,
             observaciones: formData.observaciones.trim(),
-            total: total.toString(),
-            creadoPor: formData.creadoPor
+            creadoPor: currentUserId,
+            creadoEn: creadoEn
         }
 
         await onSubmit(nominaData)
@@ -246,28 +296,7 @@ const CreateNominaModal = ({ isOpen, onClose, onSubmit, operadores }) => {
                     </div>
 
                     {/* Datos del Operador */}
-                    <div className="grid grid-cols-3 gap-4">
-                        <div>
-                            <label className="block text-sm font-semibold text-slate-700 mb-2">
-                                Nombre <span className="text-red-500">*</span>
-                            </label>
-                            <input
-                                type="text"
-                                name="nombre"
-                                value={formData.nombre}
-                                onChange={handleChange}
-                                placeholder="Nombre completo"
-                                className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${errors.nombre ? 'border-red-300' : 'border-slate-300'
-                                    }`}
-                            />
-                            {errors.nombre && (
-                                <p className="mt-1 text-sm text-red-600 flex items-center space-x-1">
-                                    <AlertCircle className="h-4 w-4" />
-                                    <span>{errors.nombre}</span>
-                                </p>
-                            )}
-                        </div>
-
+                    <div className="grid grid-cols-2 gap-4">
                         <div>
                             <label className="block text-sm font-semibold text-slate-700 mb-2">
                                 Alias
@@ -277,7 +306,7 @@ const CreateNominaModal = ({ isOpen, onClose, onSubmit, operadores }) => {
                                 name="alias"
                                 value={formData.alias}
                                 onChange={handleChange}
-                                placeholder="Alias del operador"
+                                placeholder="Alias"
                                 className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                             />
                         </div>
@@ -289,7 +318,7 @@ const CreateNominaModal = ({ isOpen, onClose, onSubmit, operadores }) => {
                             <div className="relative">
                                 <CreditCard className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
                                 <input
-                                    type="text"
+                                    type="number"
                                     name="cuenta"
                                     value={formData.cuenta}
                                     onChange={handleChange}
@@ -407,6 +436,11 @@ const CreateNominaModal = ({ isOpen, onClose, onSubmit, operadores }) => {
                         <div>
                             <label className="block text-sm font-semibold text-slate-700 mb-2">
                                 Número de Viajes
+                                {loadingViajes && (
+                                    <span className="ml-2 text-xs text-blue-600 font-normal">
+                                        Calculando...
+                                    </span>
+                                )}
                             </label>
                             <div className="relative">
                                 <Hash className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
@@ -415,11 +449,15 @@ const CreateNominaModal = ({ isOpen, onClose, onSubmit, operadores }) => {
                                     name="numeroViajes"
                                     value={formData.numeroViajes}
                                     onChange={handleChange}
-                                    placeholder="12"
+                                    placeholder="Se calcula automáticamente"
                                     min="0"
-                                    className="w-full pl-10 pr-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                                    disabled={loadingViajes}
+                                    className={`w-full pl-10 pr-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${loadingViajes ? 'bg-slate-50 cursor-not-allowed' : ''}`}
                                 />
                             </div>
+                            <p className="mt-1 text-xs text-slate-500">
+                                Se calcula automáticamente según el operador y periodo
+                            </p>
                         </div>
                     </div>
 

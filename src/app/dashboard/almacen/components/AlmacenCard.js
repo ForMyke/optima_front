@@ -41,7 +41,7 @@ const AlmacenCard = ({ almacen, usuarios, onEdit, onDelete, onViewDetails }) => 
       className="bg-white rounded-xl shadow-sm border border-slate-200 hover:shadow-md transition-all">
       <div className="p-6">
         <div className="flex items-start justify-between mb-4">
-          <div className="flex items-center space-x-4 flex-1" onClick={() => {
+          <div className="flex items-center space-x-4 flex-1 cursor-pointer" onClick={() => {
             router.push(`/dashboard/almacen/${almacen.id}`)
             setShowMenu(false)
           }}>

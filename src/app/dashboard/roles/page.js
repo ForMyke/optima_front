@@ -666,27 +666,6 @@ const RolesPage = () => {
           color="bg-indigo-600"
           description="Roles configurados"
         />
-        <StatCard
-          title="Roles activos"
-          value={stats.total}
-          icon={Award}
-          color="bg-emerald-600"
-          description="En uso"
-        />
-        <StatCard
-          title="Usuarios asignados"
-          value="0"
-          icon={Users}
-          color="bg-blue-600"
-          description="Con roles"
-        />
-        <StatCard
-          title="Permisos únicos"
-          value="0"
-          icon={Lock}
-          color="bg-purple-600"
-          description="Configurados"
-        />
       </div>
 
       {/* Search */}

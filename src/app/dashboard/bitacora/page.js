@@ -253,24 +253,6 @@ export default function BitacoraPage() {
             color="bg-emerald-600"
             description="Suma de todos los viajes"
           />
-          <StatCard
-            title="Costo de diesel"
-            value={`$${stats.totalDiesel.toFixed(1)}`}
-            icon={Fuel}
-            color="bg-amber-600"
-            description="Costo total de diesel consumido"
-          />
-          <StatCard
-            title="Casetas Total"
-            value={new Intl.NumberFormat('es-MX', {
-              style: 'currency',
-              currency: 'MXN',
-              minimumFractionDigits: 0
-            }).format(stats.totalCasetas)}
-            icon={Receipt}
-            color="bg-purple-600"
-            description="Gastos en casetas"
-          />
         </div>
 
         {/* Search */}

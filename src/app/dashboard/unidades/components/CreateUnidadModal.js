@@ -1,30 +1,23 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Truck, Settings, Wrench, Calendar, User, AlertCircle } from 'lucide-react'
+import { Truck, Settings, Wrench, Calendar, Shield, AlertCircle } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { authService } from '@/app/services/authService'
 
 const CreateUnidadModal = ({ isOpen, onClose, onSave }) => {
-  const [currentUser, setCurrentUser] = useState(null)
   const [formData, setFormData] = useState({
     placas: '',
+    numeroEconomico: '',
     marca: '',
     modelo: '',
     anio: new Date().getFullYear(),
-    tipo: 'TRACTOCAMION',
+    tipo: 'Tractocamión',
     kilometrajeActual: '',
-    fechaUltimoMto: '',
+    fechaVencimientoSeguros: '',
     estado: 'ACTIVA'
   })
   const [errors, setErrors] = useState({})
   const [isLoading, setIsLoading] = useState(false)
-
-  useEffect(() => {
-    // Obtener usuario autenticado al montar el componente
-    const user = authService.getUser()
-    setCurrentUser(user)
-  }, [])
 
   // Limpiar errores al abrir el modal
   useEffect(() => {
@@ -37,15 +30,24 @@ const CreateUnidadModal = ({ isOpen, onClose, onSave }) => {
   const validateForm = () => {
     const newErrors = {}
 
-    // Validar número económico (formato mexicano: 7 caracteres - 3 letras + 4 números o 4 letras + 3 números)
+    // Validar placas (formato mexicano)
     if (!formData.placas.trim()) {
-      newErrors.placas = 'El número económico es obligatorio'
+      newErrors.placas = 'Las placas son obligatorias'
     } else if (formData.placas.trim().length < 6) {
-      newErrors.placas = 'El número económico debe tener al menos 6 caracteres'
+      newErrors.placas = 'Las placas deben tener al menos 6 caracteres'
     } else if (formData.placas.trim().length > 10) {
-      newErrors.placas = 'El número económico no puede tener más de 10 caracteres'
+      newErrors.placas = 'Las placas no pueden tener más de 10 caracteres'
     } else if (!/^[A-Z0-9-]+$/.test(formData.placas.trim())) {
-      newErrors.placas = 'El número económico solo puede contener letras mayúsculas, números y guiones'
+      newErrors.placas = 'Las placas solo pueden contener letras mayúsculas, números y guiones'
+    }
+
+    // Validar número económico
+    if (!formData.numeroEconomico.trim()) {
+      newErrors.numeroEconomico = 'El número económico es obligatorio'
+    } else if (formData.numeroEconomico.trim().length < 2) {
+      newErrors.numeroEconomico = 'El número económico debe tener al menos 2 caracteres'
+    } else if (formData.numeroEconomico.trim().length > 20) {
+      newErrors.numeroEconomico = 'El número económico no puede tener más de 20 caracteres'
     }
 
     // Validar marca (mínimo 2 caracteres, solo letras)
@@ -86,13 +88,13 @@ const CreateUnidadModal = ({ isOpen, onClose, onSave }) => {
       }
     }
 
-    // Validar fecha de último mantenimiento (opcional pero debe ser válida)
-    if (formData.fechaUltimoMto) {
-      const fechaMto = new Date(formData.fechaUltimoMto)
+    // Validar fecha de vencimiento de seguros (opcional pero debe ser válida)
+    if (formData.fechaVencimientoSeguros) {
+      const fechaVencimiento = new Date(formData.fechaVencimientoSeguros)
       const today = new Date()
 
-      if (fechaMto > today) {
-        newErrors.fechaUltimoMto = 'La fecha de mantenimiento no puede ser futura'
+      if (fechaVencimiento < today) {
+        newErrors.fechaVencimientoSeguros = 'La fecha de vencimiento no puede ser pasada'
       }
     }
 
@@ -114,28 +116,23 @@ const CreateUnidadModal = ({ isOpen, onClose, onSave }) => {
       return
     }
 
-    if (!currentUser?.id) {
-      toast.error('No se pudo identificar el usuario autenticado')
-      return
-    }
-
     setIsLoading(true)
     try {
       const dataToSend = {
         ...formData,
         anio: parseInt(formData.anio),
-        kilometrajeActual: parseFloat(formData.kilometrajeActual) || 0,
-        creadoPorId: currentUser.id
+        kilometrajeActual: parseFloat(formData.kilometrajeActual) || 0
       }
       await onSave(dataToSend)
       setFormData({
         placas: '',
+        numeroEconomico: '',
         marca: '',
         modelo: '',
         anio: new Date().getFullYear(),
-        tipo: 'TRACTOCAMION',
+        tipo: 'Tractocamión',
         kilometrajeActual: '',
-        fechaUltimoMto: '',
+        fechaVencimientoSeguros: '',
         estado: 'ACTIVA'
       })
       setErrors({})
@@ -172,6 +169,30 @@ const CreateUnidadModal = ({ isOpen, onClose, onSave }) => {
                   </label>
                   <input
                     type="text"
+                    value={formData.numeroEconomico}
+                    onChange={(e) => {
+                      const value = e.target.value.toUpperCase()
+                      setFormData({ ...formData, numeroEconomico: value })
+                      if (errors.numeroEconomico) setErrors({ ...errors, numeroEconomico: '' })
+                    }}
+                    className={`w-full px-4 py-3 bg-white border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-900 ${errors.numeroEconomico ? 'border-red-500' : 'border-slate-200'
+                      }`}
+                    maxLength={20}
+                    placeholder="AAAAAA"
+                  />
+                  {errors.numeroEconomico && (
+                    <p className="text-red-500 text-sm mt-1 flex items-center">
+                      <AlertCircle className="h-4 w-4 mr-1" />
+                      {errors.numeroEconomico}
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Placas *
+                  </label>
+                  <input
+                    type="text"
                     value={formData.placas}
                     onChange={(e) => {
                       const value = e.target.value.toUpperCase().replace(/[^A-Z0-9-]/g, '')
@@ -181,7 +202,7 @@ const CreateUnidadModal = ({ isOpen, onClose, onSave }) => {
                     className={`w-full px-4 py-3 bg-white border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-900 ${errors.placas ? 'border-red-500' : 'border-slate-200'
                       }`}
                     maxLength={10}
-                    placeholder="ABC123DEF"
+                    placeholder="ABC-123"
                   />
                   {errors.placas && (
                     <p className="text-red-500 text-sm mt-1 flex items-center">
@@ -280,11 +301,11 @@ const CreateUnidadModal = ({ isOpen, onClose, onSave }) => {
                     className={`w-full px-4 py-3 bg-white border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-900 ${errors.tipo ? 'border-red-500' : 'border-slate-200'
                       }`}
                   >
-                    <option value="TRACTOCAMION">Tractocamión</option>
-                    <option value="CAMION">Camión</option>
-                    <option value="CAMIONETA">Camioneta</option>
-                    <option value="REMOLQUE">Remolque</option>
-                    <option value="SEMIREMOLQUE">Semiremolque</option>
+                    <option value="Tractocamión">Tractocamión</option>
+                    <option value="Camión">Camión</option>
+                    <option value="Camioneta">Camioneta</option>
+                    <option value="Remolque">Remolque</option>
+                    <option value="Semiremolque">Semiremolque</option>
                   </select>
                   {errors.tipo && (
                     <p className="text-red-500 text-sm mt-1 flex items-center">
@@ -320,11 +341,11 @@ const CreateUnidadModal = ({ isOpen, onClose, onSave }) => {
               </div>
             </div>
 
-            {/* Mantenimiento */}
+            {/* Seguros */}
             <div>
               <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center">
-                <Wrench className="h-5 w-5 mr-2" />
-                Mantenimiento
+                <Shield className="h-5 w-5 mr-2" />
+                Seguros
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -343,7 +364,7 @@ const CreateUnidadModal = ({ isOpen, onClose, onSave }) => {
                     }}
                     className={`w-full px-4 py-3 bg-white border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-900 ${errors.kilometrajeActual ? 'border-red-500' : 'border-slate-200'
                       }`}
-                    placeholder="158000.5"
+                    placeholder="150000"
                   />
                   {errors.kilometrajeActual && (
                     <p className="text-red-500 text-sm mt-1 flex items-center">
@@ -354,45 +375,29 @@ const CreateUnidadModal = ({ isOpen, onClose, onSave }) => {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">
-                    Fecha último mantenimiento *
+                    Fecha vencimiento seguros
                   </label>
                   <input
                     type="date"
-                    value={formData.fechaUltimoMto}
+                    value={formData.fechaVencimientoSeguros}
                     onChange={(e) => {
-                      setFormData({ ...formData, fechaUltimoMto: e.target.value })
-                      if (errors.fechaUltimoMto) setErrors({ ...errors, fechaUltimoMto: '' })
+                      setFormData({ ...formData, fechaVencimientoSeguros: e.target.value })
+                      if (errors.fechaVencimientoSeguros) setErrors({ ...errors, fechaVencimientoSeguros: '' })
                     }}
-                    className={`w-full px-4 py-3 bg-white border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-900 ${errors.fechaUltimoMto ? 'border-red-500' : 'border-slate-200'
+                    className={`w-full px-4 py-3 bg-white border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-900 ${errors.fechaVencimientoSeguros ? 'border-red-500' : 'border-slate-200'
                       }`}
                   />
-                  {errors.fechaUltimoMto && (
+                  {errors.fechaVencimientoSeguros && (
                     <p className="text-red-500 text-sm mt-1 flex items-center">
                       <AlertCircle className="h-4 w-4 mr-1" />
-                      {errors.fechaUltimoMto}
+                      {errors.fechaVencimientoSeguros}
                     </p>
                   )}
                 </div>
               </div>
             </div>
 
-            {/* Usuario - Mostrar info del usuario autenticado */}
-            <div>
-              <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center">
-                <Calendar className="h-5 w-5 mr-2" />
-                Información de registro
-              </h3>
-              <div>
-                <div className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg text-slate-700">
-                  <div className="flex items-center">
-                    <User className="h-4 w-4 mr-2 text-slate-500" />
-                    <span className="font-medium">{currentUser?.nombre || 'Cargando...'}</span>
-                    <span className="ml-2 text-sm text-slate-500">({currentUser?.email})</span>
-                  </div>
-                </div>
-                <p className="text-xs text-slate-500 mt-1">Usuario autenticado actualmente</p>
-              </div>
-            </div>
+
           </div>
 
           <div className="flex justify-end space-x-3 mt-6 pt-6 border-t border-slate-200">

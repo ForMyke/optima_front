@@ -283,11 +283,11 @@ const FacturasExtraPage = () => {
           description="Completadas"
         />
         <StatCard
-          title="Monto pendiente"
-          value={`$${(stats.montoPendiente / 1000).toFixed(1)}K`}
-          icon={DollarSign}
+          title="Vencidas"
+          value={stats.vencidas}
+          icon={XCircle}
           color="bg-red-600"
-          description={`Total: $${(stats.totalMonto / 1000).toFixed(1)}K`}
+          description="Facturas vencidas"
         />
       </div>
 

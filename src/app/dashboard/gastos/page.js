@@ -172,38 +172,6 @@ export default function GastosSemanalesPage() {
         </div>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard
-          title="Total Semanas"
-          value={stats.totalSemanas}
-          icon={Calendar}
-          color="blue"
-          description="Semanas registradas"
-        />
-        <StatCard
-          title="Total Gastos"
-          value={`$${stats.totalGastos.toLocaleString('es-MX', { minimumFractionDigits: 2 })}`}
-          icon={DollarSign}
-          color="red"
-          description="Suma de todos los gastos"
-        />
-        <StatCard
-          title="Promedio Semanal"
-          value={`$${stats.promedioSemanal.toLocaleString('es-MX', { minimumFractionDigits: 2 })}`}
-          icon={TrendingUp}
-          color="orange"
-          description="Gasto promedio por semana"
-        />
-        <StatCard
-          title="Mayor Gasto"
-          value={`$${stats.mayorGasto.toLocaleString('es-MX', { minimumFractionDigits: 2 })}`}
-          icon={TrendingDown}
-          color="purple"
-          description="Semana con mayor gasto"
-        />
-      </div>
-
       {/* Search */}
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
         <div className="relative">
