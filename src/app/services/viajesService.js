@@ -70,10 +70,14 @@ export const viajesService = {
     }
   },
 
-  // Actualizar un viaje existente
-  async updateViaje(id, viajeData) {
+  // Actualizar un viaje existente con FormData (dto + archivo)
+  async updateViaje(id, viajeData, archivo = null) {
     try {
-      const body = {
+      // Crear FormData
+      const formData = new FormData()
+
+      // Preparar el DTO como objeto JSON
+      const dto = {
         idUnidad: viajeData.idUnidad,
         idOperador: viajeData.idOperador,
         idCliente: viajeData.idCliente,
@@ -81,19 +85,30 @@ export const viajesService = {
         destino: viajeData.destino,
         fechaSalida: viajeData.fechaSalida,
         fechaEstimadaLlegada: viajeData.fechaEstimadaLlegada,
+        fechaRealLlegada: viajeData.fechaRealLlegada || null,
         estado: viajeData.estado,
         cargaDescripcion: viajeData.cargaDescripcion,
-        observaciones: viajeData.observaciones || null,
         tarifa: viajeData.tarifa,
         distanciaKm: viajeData.distanciaKm,
-        tipo: viajeData.tipo,
-        responsableLogistica: viajeData.responsableLogistica,
-        evidenciaUrl: viajeData.evidenciaUrl || null,
-        creadoPor: viajeData.creadoPor,
-        folio: viajeData.folio || null
+        tipoViaje: viajeData.tipo,
+        folio: viajeData.folio || null,
+        comisionOperador: viajeData.comisionOperador || null
       }
 
-      const response = await apiClient.put(`/api/viajes/${id}`, body)
+      // Agregar el DTO como Blob con tipo application/json
+      const dtoBlob = new Blob([JSON.stringify(dto)], { type: 'application/json' })
+      formData.append('dto', dtoBlob)
+
+      // Agregar el archivo si existe
+      if (archivo) {
+        formData.append('archivo', archivo)
+      }
+
+      const response = await apiClient.put(`/api/viajes/${id}`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      })
       return response.data
     } catch (error) {
       console.error('Error al actualizar viaje:', error)

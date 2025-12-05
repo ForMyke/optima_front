@@ -121,7 +121,7 @@ const EditNominaModal = ({ isOpen, onClose, onSubmit, nomina, operadores }) => {
     if (!isOpen || !nomina) return null
 
     return (
-        <div className="fixed inset-0 backdrop-blur-xs bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 backdrop-blur-xs backdrop-blur-xs bg-opacity-50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-xl shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
                 {/* Header */}
                 <div className="sticky top-0 bg-white p-6 border-b border-slate-200 z-10">

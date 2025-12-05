@@ -33,7 +33,7 @@ const ConfirmDeleteModal = ({ isOpen, onClose, onConfirm, nomina }) => {
     )
 
     return (
-        <div className="fixed inset-0 backdrop-blur-xs bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 backdrop-blur-xs  bg-opacity-50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-xl shadow-xl w-full max-w-md">
                 {/* Header */}
                 <div className="p-6 border-b border-slate-200">

@@ -29,9 +29,9 @@ const CreateNominaModal = ({ isOpen, onClose, onSubmit, operadores }) => {
         }
     }, [])
 
-    // Calcular número de viajes automáticamente cuando cambian operador o fechas
+    // Calcular número de viajes y comisiones automáticamente cuando cambian operador o fechas
     useEffect(() => {
-        const calcularNumeroViajes = async () => {
+        const calcularViajesYComisiones = async () => {
             // Solo calcular si tenemos operador y ambas fechas
             if (!formData.operadorId || !formData.periodoInicio || !formData.periodoFin) {
                 return
@@ -48,24 +48,32 @@ const CreateNominaModal = ({ isOpen, onClose, onSubmit, operadores }) => {
                 const fechaFin = new Date(formData.periodoFin)
 
                 const viajesEnPeriodo = viajes.filter(viaje => {
+                    if (!viaje.fechaSalida) return false
                     const fechaSalida = new Date(viaje.fechaSalida)
                     return fechaSalida >= fechaInicio && fechaSalida <= fechaFin
                 })
 
-                // Actualizar el número de viajes
+                // Calcular comisión total de los viajes del periodo
+                const comisionTotal = viajesEnPeriodo.reduce((total, viaje) => {
+                    const comision = parseFloat(viaje.comisionOperador) || 0
+                    return total + comision
+                }, 0)
+
+                // Actualizar el número de viajes y la comisión
                 setFormData(prev => ({
                     ...prev,
-                    numeroViajes: viajesEnPeriodo.length.toString()
+                    numeroViajes: viajesEnPeriodo.length.toString(),
+                    comisionViajes: comisionTotal.toString()
                 }))
             } catch (error) {
-                console.error('Error al calcular número de viajes:', error)
+                console.error('Error al calcular viajes y comisiones:', error)
                 // No mostramos error al usuario, simplemente no se auto-completa
             } finally {
                 setLoadingViajes(false)
             }
         }
 
-        calcularNumeroViajes()
+        calcularViajesYComisiones()
     }, [formData.operadorId, formData.periodoInicio, formData.periodoFin])
 
     const [errors, setErrors] = useState({})

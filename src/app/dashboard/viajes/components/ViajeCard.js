@@ -14,7 +14,9 @@ import {
   Clock,
   CheckCircle,
   XCircle,
-  Navigation
+  Navigation,
+  AlertTriangle,
+  FileCheck
 } from 'lucide-react'
 import { authService } from '@/app/services/authService'
 
@@ -162,20 +164,36 @@ const ViajeCard = ({ viaje, onEdit, onDelete, onViewDetails, operadores, cliente
             value={viaje.estado}
             onChange={handleEstadoChange}
             className={`w-full px-3 py-2 rounded-lg border-2 transition-all font-medium text-sm cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 ${viaje.estado === 'PENDIENTE' ? 'border-yellow-200 bg-yellow-50 text-yellow-800' :
-                viaje.estado === 'EN_CURSO' ? 'border-blue-200 bg-blue-50 text-blue-800' :
-                  viaje.estado === 'COMPLETADO' ? 'border-green-200 bg-green-50 text-green-800' :
-                    viaje.estado === 'FINALIZADO' ? 'border-teal-200 bg-teal-50 text-teal-800' :
-                      viaje.estado === 'RECHAZADO' ? 'border-orange-200 bg-orange-50 text-orange-800' :
-                        'border-red-200 bg-red-50 text-red-800'
+              viaje.estado === 'EN_CURSO' ? 'border-blue-200 bg-blue-50 text-blue-800' :
+                viaje.estado === 'COMPLETADO' ? 'border-green-200 bg-green-50 text-green-800' :
+                  viaje.estado === 'FINALIZADO' ? 'border-teal-200 bg-teal-50 text-teal-800' :
+                    viaje.estado === 'RECHAZADO' ? 'border-orange-200 bg-orange-50 text-orange-800' :
+                      'border-red-200 bg-red-50 text-red-800'
               }`}
           >
             <option value="PENDIENTE">Pendiente</option>
             <option value="EN_CURSO">En curso</option>
             <option value="COMPLETADO">Completado</option>
-            <option value="FINALIZADO">Finalizado</option>
             <option value="RECHAZADO">Rechazado</option>
             <option value="CANCELADO">Cancelado</option>
           </select>
+
+          {/* Indicador de evidencia para viajes COMPLETADOS */}
+          {viaje.estado === 'COMPLETADO' && (
+            <div className="mt-2">
+              {viaje.evidenciaUrl ? (
+                <div className="flex items-center text-xs text-green-700 bg-green-50 border border-green-200 rounded-lg px-3 py-2">
+                  <FileCheck className="h-4 w-4 mr-2" />
+                  <span className="font-medium">Con evidencia</span>
+                </div>
+              ) : (
+                <div className="flex items-center text-xs text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                  <AlertTriangle className="h-4 w-4 mr-2" />
+                  <span className="font-medium">Sin evidencia</span>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="space-y-3 mb-4">

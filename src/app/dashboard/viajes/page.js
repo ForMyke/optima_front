@@ -71,8 +71,12 @@ const EvidenciaModal = ({ isOpen, onClose, onSave, viaje, nuevoEstado, setViajes
   }, [previewUrl])
 
   // Determinar requerimientos según el estado
-  const requiereEvidencia = ['FINALIZADO', 'RECHAZADO'].includes(nuevoEstado)
-  const requiereFecha = ['COMPLETADO', 'RECHAZADO'].includes(nuevoEstado)
+  // COMPLETADO: evidencia OPCIONAL, sin fecha requerida
+  // RECHAZADO: evidencia OBLIGATORIA + fecha real de llegada
+  // FINALIZADO: se elimina del flujo
+  const requiereEvidencia = ['RECHAZADO'].includes(nuevoEstado)
+  const requiereFecha = ['RECHAZADO'].includes(nuevoEstado)
+  const evidenciaOpcional = ['COMPLETADO'].includes(nuevoEstado)
 
   const handleFileSelect = (e) => {
     const file = e.target.files[0]
@@ -135,11 +139,13 @@ const EvidenciaModal = ({ isOpen, onClose, onSave, viaje, nuevoEstado, setViajes
 
     const sizeMB = selectedFile ? (selectedFile.size / 1024 / 1024).toFixed(2) : 'N/A'
 
-    // Validación de evidencia requerida
+    // Validación de evidencia requerida (solo para RECHAZADO)
     if (requiereEvidencia && !selectedFile) {
       toast.error('⚠️ Se requiere archivo de evidencia para este estado')
       return
     }
+
+    // Para COMPLETADO la evidencia es opcional - no validamos
 
     // Validación de fecha requerida
     if (requiereFecha && !fechaRealLlegada) {
@@ -239,7 +245,7 @@ const EvidenciaModal = ({ isOpen, onClose, onSave, viaje, nuevoEstado, setViajes
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-2xl font-bold text-slate-900">
-                {requiereEvidencia ? 'Subir archivo de evidencia' : 'Confirmar cambio de estado'}
+                {requiereEvidencia ? 'Subir archivo de evidencia' : evidenciaOpcional ? 'Completar viaje (evidencia opcional)' : 'Confirmar cambio de estado'}
               </h2>
               <p className="text-sm text-slate-600 mt-1">
                 Viaje #{viaje?.id} - Cambio a estado:
@@ -259,11 +265,11 @@ const EvidenciaModal = ({ isOpen, onClose, onSave, viaje, nuevoEstado, setViajes
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          {/* Área de carga de imagen - Solo si requiere evidencia */}
-          {requiereEvidencia && (
+          {/* Área de carga de imagen - Obligatorio para RECHAZADO, opcional para COMPLETADO */}
+          {(requiereEvidencia || evidenciaOpcional) && (
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-3">
-                Archivo de evidencia *
+                Archivo de evidencia {requiereEvidencia ? '*' : '(opcional)'}
               </label>
 
               {!selectedFile ? (
@@ -304,7 +310,7 @@ const EvidenciaModal = ({ isOpen, onClose, onSave, viaje, nuevoEstado, setViajes
                   )}
 
                   {/* Información del archivo */}
-                  <div className="absolute top-2 left-2 bg-black bg-opacity-75 text-white px-3 py-1.5 rounded-lg text-xs font-medium">
+                  <div className="absolute top-2 left-2  bg-opacity-75 text-white px-3 py-1.5 rounded-lg text-xs font-medium">
                     {selectedFile && (
                       <>
                         <span className="block truncate max-w-xs">{selectedFile.name}</span>
@@ -543,9 +549,9 @@ const ViajesPage = () => {
     }
   }
 
-  const handleUpdateViaje = async (viajeId, viajeData) => {
+  const handleUpdateViaje = async (viajeId, viajeData, archivo) => {
     try {
-      await viajesService.updateViaje(viajeId, viajeData)
+      await viajesService.updateViaje(viajeId, viajeData, archivo)
       toast.success('Viaje actualizado exitosamente')
       setShowEditModal(false)
       setSelectedViaje(null)
@@ -614,8 +620,9 @@ const ViajesPage = () => {
   }
 
   const handleEstadoChange = async (viaje, nuevoEstado) => {
-    // Abrir modal para COMPLETADO, FINALIZADO y RECHAZADO
-    if (['COMPLETADO', 'FINALIZADO', 'RECHAZADO'].includes(nuevoEstado)) {
+    // Abrir modal para COMPLETADO (evidencia opcional) y RECHAZADO (evidencia obligatoria)
+    // FINALIZADO ya no se usa en el flujo
+    if (['COMPLETADO', 'RECHAZADO'].includes(nuevoEstado)) {
       setSelectedViaje(viaje)
       setNuevoEstado(nuevoEstado)
       setShowEvidenciaModal(true)
@@ -784,6 +791,7 @@ const ViajesPage = () => {
               <option value="PENDIENTE">Pendientes</option>
               <option value="EN_CURSO">En curso</option>
               <option value="COMPLETADO">Completados</option>
+              <option value="RECHAZADO">Rechazados</option>
               <option value="CANCELADO">Cancelados</option>
             </select>
           </div>

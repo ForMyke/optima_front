@@ -39,6 +39,7 @@ const EditViajeModal = ({ isOpen, onClose, onSave, viaje, operadores, clientes, 
   const [rutaSeleccionada, setRutaSeleccionada] = useState(null)
   const [tarifaRuta, setTarifaRuta] = useState(null)
   const [loadingRutas, setLoadingRutas] = useState(false)
+  const [archivo, setArchivo] = useState(null)
 
   // Obtener usuario autenticado al abrir el modal
   useEffect(() => {
@@ -230,25 +231,19 @@ const EditViajeModal = ({ isOpen, onClose, onSave, viaje, operadores, clientes, 
         idUnidad: parseInt(formData.idUnidad),
         idOperador: parseInt(formData.idOperador),
         idCliente: parseInt(formData.idCliente),
-        idRutaComisiones: formData.idRutaComisiones ? parseInt(formData.idRutaComisiones) : null,
+        origen: rutaSeleccionada?.origen || 'N/A',
+        destino: rutaSeleccionada?.destino || 'N/A',
         fechaSalida: formData.fechaSalida,
         fechaEstimadaLlegada: formData.fechaEstimadaLlegada,
+        fechaRealLlegada: null,
         estado: formData.estado,
         cargaDescripcion: formData.cargaDescripcion.trim(),
-        observaciones: formData.observaciones?.trim() || null,
-        tipo: formData.tipo,
-        responsableLogistica: parseInt(formData.responsableLogistica) || currentUser.id,
-        evidenciaUrl: formData.evidenciaUrl || null,
-        creadoPor: currentUser.id,
         tarifa: formData.tarifa ? parseFloat(formData.tarifa) : null,
         distanciaKm: formData.distanciaKm ? parseFloat(formData.distanciaKm) : null,
-        casetas: formData.casetas ? parseFloat(formData.casetas) : null,
-        dieselLitros: formData.dieselCostoTotal ? parseFloat(formData.dieselCostoTotal) : null,
-        comisionOperador: formData.comisionOperador ? parseFloat(formData.comisionOperador) : null,
-        gastosExtras: formData.gastosExtras ? parseFloat(formData.gastosExtras) : null,
-        costoTotal: formData.costoTotal ? parseFloat(formData.costoTotal) : null,
-        folio: formData.folio || null
-      })
+        tipo: formData.tipo,
+        folio: formData.folio || null,
+        comisionOperador: formData.comisionOperador ? parseFloat(formData.comisionOperador) : null
+      }, archivo)
       onClose()
     } catch (error) {
       console.error('Error en handleSubmit:', error)
@@ -605,15 +600,16 @@ const EditViajeModal = ({ isOpen, onClose, onSave, viaje, operadores, clientes, 
                     }
                   }}
                   className={`w-full px-3 py-2 rounded-lg border-2 transition-all font-medium text-sm cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 ${formData.estado === 'PENDIENTE' ? 'border-yellow-200 bg-yellow-50 text-yellow-800' :
-                      formData.estado === 'EN_CURSO' ? 'border-blue-200 bg-blue-50 text-blue-800' :
-                        formData.estado === 'COMPLETADO' ? 'border-green-200 bg-green-50 text-green-800' :
-                          'border-red-200 bg-red-50 text-red-800'
+                    formData.estado === 'EN_CURSO' ? 'border-blue-200 bg-blue-50 text-blue-800' :
+                      formData.estado === 'COMPLETADO' ? 'border-green-200 bg-green-50 text-green-800' :
+                        'border-red-200 bg-red-50 text-red-800'
                     }`}
                   required
                 >
                   <option value="PENDIENTE">Pendiente</option>
                   <option value="EN_CURSO">En curso</option>
                   <option value="COMPLETADO">Completado</option>
+                  <option value="RECHAZADO">Rechazado</option>
                   <option value="CANCELADO">Cancelado</option>
                 </select>
               </div>
