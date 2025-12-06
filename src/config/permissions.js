@@ -66,6 +66,9 @@ export const PERMISSIONS = {
       '/dashboard/nomina',
       '/dashboard/facturas',
       '/dashboard/facturas/extra',
+       '/dashboard/liquidacion_efectivo',
+      '/dashboard/nomina-fija',
+      '/dashboard/nomina-operativa',
       '/dashboard/gastos',
       '/dashboard/graficos',
       '/dashboard/resumen-gastos'
