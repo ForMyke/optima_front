@@ -317,6 +317,24 @@ export const viajesService = {
           'Content-Type': 'multipart/form-data'
         }
       })
+
+      // Si el estado es COMPLETADO, llamar también al endpoint específico
+      if (nuevoEstado === 'COMPLETADO') {
+        console.log('🏁 Ejecutando endpoint adicional de completar viaje...')
+        const completarFormData = new FormData()
+        if (archivo) {
+          completarFormData.append('archivo', archivo)
+        }
+
+        // Axios maneja automáticamente el Content-Type: multipart/form-data para objetos FormData
+        try {
+          await apiClient.post(`/api/viajes/${id}/completar`, completarFormData)
+        } catch (error) {
+          console.error('⚠️ Error al llamar al endpoint de completar (pero el estado se actualizó):', error)
+          // No lanzamos el error para no bloquear el flujo exitoso del cambio de estado
+        }
+      }
+
       return response.data
     } catch (error) {
       console.error('Error al cambiar estado del viaje:', error)

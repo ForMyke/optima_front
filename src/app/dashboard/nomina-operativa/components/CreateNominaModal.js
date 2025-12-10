@@ -432,7 +432,7 @@ const CreateNominaModal = ({ isOpen, onClose, onSubmit, operadores }) => {
 
                         <div>
                             <label className="block text-sm font-semibold text-slate-700 mb-2">
-                                Comisión por Viajes
+                                Comisión total
                                 {loadingComisiones && (
                                     <span className="ml-2 text-xs text-blue-600 font-normal">
                                         Cargando desde API...

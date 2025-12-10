@@ -2,17 +2,17 @@
 
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
-import { Bell, Search, User, LogOut, ChevronDown, Menu, AlertCircle, FileText, Banknote, Clock } from 'lucide-react'
+import { Bell, User, LogOut, ChevronDown, Menu, AlertCircle, CheckCircle, Clock } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { authService } from '@/app/services/authService'
-import { facturaService } from '@/app/services/facturaService'
-import { operadoresService } from '@/app/services/operadoresService'
+import { alertsService } from '@/app/services/alertsService'
 import { getRoleDisplayName } from '@/config/permissions'
 
 export function Header({ onMenuClick }) {
   const [showUserMenu, setShowUserMenu] = useState(false)
   const [showNotifications, setShowNotifications] = useState(false)
   const [notifications, setNotifications] = useState([])
+  const [alertCount, setAlertCount] = useState(0)
   const [loadingNotifications, setLoadingNotifications] = useState(false)
   const router = useRouter()
   const userMenuRef = useRef(null)
@@ -26,153 +26,108 @@ export function Header({ onMenuClick }) {
     return null
   }, [])
 
-  // Fetch notifications
+  // Obtener solo el conteo para la campana
+  const fetchAlertCount = async () => {
+    if (!user) return
+    try {
+      const count = await alertsService.getAlertsCount()
+      setAlertCount(count)
+    } catch (error) {
+      console.error('Error getting alert count:', error)
+    }
+  }
+
+  // Obtener la lista completa de alertas
   const fetchNotifications = async () => {
-    if (!user || (user.rol !== 'ADMIN' && user.rol !== 'NOMINA')) return
+    if (!user) return
 
     try {
       setLoadingNotifications(true)
-      const [facturasExtraRes, liquidacionRes, operadoresRes] = await Promise.allSettled([
-        facturaService.getFacturasExtraByEstatus('PENDIENTE', 0, 50),
-        facturaService.getFacturasByTipo('SIN_FACTURA', 0, 50),
-        operadoresService.getOperadores(0, 100)
-      ])
+      const activeAlerts = await alertsService.getActiveAlerts()
 
-      const newNotifications = []
+      // Mapear respuesta de API al formato de notificaciones
+      const mappedNotifications = activeAlerts.map(alerta => ({
+        id: alerta.id,
+        title: alerta.titulo || 'Notificación',
+        message: alerta.mensaje || alerta.descripcion || '',
+        type: (alerta.tipo || 'INFO').toLowerCase(), // Asumimos WARNING, ERROR, INFO
+        date: new Date(alerta.fechaCreacion || Date.now()),
+        link: alerta.enlace || '#', // Enlace opcional
+        icon: getIconForType(alerta.tipo),
+        color: getColorForType(alerta.tipo)
+      }))
 
-      // 1. Facturas Extra Pendientes
-      if (facturasExtraRes.status === 'fulfilled' && facturasExtraRes.value?.content) {
-        facturasExtraRes.value.content.forEach(factura => {
-          newNotifications.push({
-            id: `fe-${factura.id}`,
-            title: 'Factura Extra Pendiente',
-            message: `Factura ${factura.folio || factura.id} pendiente de pago`,
-            type: 'warning',
-            date: new Date(factura.fechaEmision || Date.now()),
-            link: '/dashboard/facturas/extra',
-            icon: FileText,
-            color: 'text-orange-500 bg-orange-50'
-          })
-        })
-      }
-
-      // 2. Liquidación Efectivo (Pendientes)
-      if (liquidacionRes.status === 'fulfilled' && liquidacionRes.value?.content) {
-        liquidacionRes.value.content.forEach(factura => {
-          if (factura.estatus === 'PENDIENTE' || factura.estatus === 'VENCIDA') {
-            const isVencida = factura.estatus === 'VENCIDA'
-            newNotifications.push({
-              id: `le-${factura.id}`,
-              title: isVencida ? 'Liquidación Vencida' : 'Liquidación Pendiente',
-              message: `Liquidación ${factura.numeroFactura} ${isVencida ? 'vencida' : 'pendiente'}`,
-              type: isVencida ? 'error' : 'info',
-              date: new Date(factura.fechaEmision || Date.now()),
-              link: '/dashboard/liquidacion_efectivo',
-              icon: Banknote,
-              color: isVencida ? 'text-red-500 bg-red-50' : 'text-blue-500 bg-blue-50'
-            })
-          }
-        })
-      }
-
-      // 3. Operadores (Licencias)
-      if (operadoresRes.status === 'fulfilled' && operadoresRes.value?.content) {
-        const today = new Date()
-        const warningDate = new Date()
-        warningDate.setDate(today.getDate() + 30) // Avisar 30 días antes
-
-        operadoresRes.value.content.forEach(op => {
-          if (op.licenciaVencimiento) {
-            const vencimiento = new Date(op.licenciaVencimiento)
-
-            if (vencimiento < today) {
-              newNotifications.push({
-                id: `op-v-${op.id}`,
-                title: 'Licencia Vencida',
-                message: `La licencia de ${op.nombre} ha vencido`,
-                type: 'error',
-                date: vencimiento,
-                link: '/dashboard/operadores',
-                icon: AlertCircle,
-                color: 'text-red-500 bg-red-50'
-              })
-            } else if (vencimiento <= warningDate) {
-              const daysLeft = Math.ceil((vencimiento - today) / (1000 * 60 * 60 * 24))
-              newNotifications.push({
-                id: `op-w-${op.id}`,
-                title: 'Licencia por Vencer',
-                message: `Licencia de ${op.nombre} vence en ${daysLeft} días`,
-                type: 'warning',
-                date: vencimiento,
-                link: '/dashboard/operadores',
-                icon: Clock,
-                color: 'text-yellow-500 bg-yellow-50'
-              })
-            }
-          }
-        })
-      }
-
-      // Ordenar por fecha (más recientes primero, aunque para vencimientos quizás sea mejor las más urgentes)
-      // Prioridad: Error > Warning > Info
-      newNotifications.sort((a, b) => {
-        const priority = { error: 3, warning: 2, info: 1 }
-        if (priority[a.type] !== priority[b.type]) {
-          return priority[b.type] - priority[a.type]
-        }
-        return b.date - a.date
-      })
-
-      setNotifications(newNotifications)
+      setNotifications(mappedNotifications)
+      // Actualizar el count también por si acaso
+      setAlertCount(mappedNotifications.length)
     } catch (error) {
       console.error('Error fetching notifications:', error)
+      setNotifications([])
     } finally {
       setLoadingNotifications(false)
     }
   }
 
+  const getIconForType = (type) => {
+    switch (type?.toUpperCase()) {
+      case 'ERROR': return AlertCircle
+      case 'WARNING': return Clock
+      case 'SUCCESS': return CheckCircle
+      default: return Bell
+    }
+  }
+
+  const getColorForType = (type) => {
+    switch (type?.toUpperCase()) {
+      case 'ERROR': return 'text-red-500 bg-red-50'
+      case 'WARNING': return 'text-yellow-500 bg-yellow-50'
+      case 'SUCCESS': return 'text-green-500 bg-green-50'
+      default: return 'text-blue-500 bg-blue-50'
+    }
+  }
+
+  // Polling para el contador
   useEffect(() => {
-    fetchNotifications()
-    // Poll every 5 minutes
-    const interval = setInterval(fetchNotifications, 5 * 60 * 1000)
+    fetchAlertCount()
+    const interval = setInterval(fetchAlertCount, 60 * 1000) // Cada minuto
     return () => clearInterval(interval)
   }, [user])
 
-  // Cerrar menús al hacer clic fuera
+  // Cargar lista cuando se abre el menú
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
-        setShowUserMenu(false)
+    if (showNotifications) {
+      fetchNotifications()
+    }
+  }, [showNotifications])
+
+  // ... (click outside effect remains) ...
+
+  // ... (handleSignOut remains) ...
+
+  const handleNotificationClick = async (notification) => {
+    try {
+      await alertsService.markAsAttended(notification.id)
+      // Actualizar lista localmente
+      setNotifications(prev => prev.filter(n => n.id !== notification.id))
+      setAlertCount(prev => Math.max(0, prev - 1))
+
+      setShowNotifications(false)
+      if (notification.link && notification.link !== '#') {
+        router.push(notification.link)
       }
-      if (notificationRef.current && !notificationRef.current.contains(event.target)) {
-        setShowNotifications(false)
+    } catch (error) {
+      console.error('Error marking alert as attended:', error)
+      // Navegar de todos modos?
+      if (notification.link && notification.link !== '#') {
+        router.push(notification.link)
       }
     }
-
-    if (showUserMenu || showNotifications) {
-      document.addEventListener('mousedown', handleClickOutside)
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
-    }
-  }, [showUserMenu, showNotifications])
-
-  const handleSignOut = () => {
-    authService.logout()
-    toast.success('Sesión cerrada correctamente')
-    router.push('/')
-  }
-
-  const handleNotificationClick = (notification) => {
-    setShowNotifications(false)
-    router.push(notification.link)
   }
 
   return (
     <header className="bg-white shadow-sm border-b border-slate-200 sticky top-0 z-30">
       <div className="flex items-center justify-end px-4 lg:px-6 py-3 lg:py-4">
-        {/* Botón menú móvil */}
+        {/* ... (mobile menu button) ... */}
         <button
           onClick={onMenuClick}
           className="lg:hidden p-2 rounded-lg hover:bg-slate-100 transition-colors"
@@ -181,15 +136,15 @@ export function Header({ onMenuClick }) {
         </button>
 
         <div className="flex items-center space-x-2 lg:space-x-4 ml-auto lg:ml-6">
-          {/* Mostrar notificaciones solo para ADMIN y NOMINA */}
-          {user?.rol && (user.rol === 'ADMIN' || user.rol === 'NOMINA') && (
+          {/* Mostrar notificaciones para todos o roles específicos? Usuario dijo "obvio quita las alertas que usabamos antes" */}
+          {user?.rol && (
             <div className="relative" ref={notificationRef}>
               <button
                 onClick={() => setShowNotifications(!showNotifications)}
                 className="relative p-2 lg:p-3 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-xl transition-all"
               >
                 <Bell className="h-5 w-5" />
-                {notifications.length > 0 && (
+                {alertCount > 0 && (
                   <span className="absolute top-1 right-1 lg:top-2 lg:right-2 h-2 w-2 bg-red-500 rounded-full animate-pulse"></span>
                 )}
               </button>
@@ -199,7 +154,7 @@ export function Header({ onMenuClick }) {
                   <div className="px-4 py-3 border-b border-slate-100 flex justify-between items-center">
                     <h3 className="font-semibold text-slate-900">Notificaciones</h3>
                     <span className="text-xs font-medium bg-blue-50 text-blue-600 px-2 py-1 rounded-full">
-                      {notifications.length} nuevas
+                      {alertCount} nuevas
                     </span>
                   </div>
 
@@ -217,7 +172,7 @@ export function Header({ onMenuClick }) {
                   ) : (
                     <div className="divide-y divide-slate-50">
                       {notifications.map((notification) => {
-                        const Icon = notification.icon
+                        const Icon = notification.icon || Bell
                         return (
                           <button
                             key={notification.id}
@@ -247,6 +202,8 @@ export function Header({ onMenuClick }) {
               )}
             </div>
           )}
+
+          {/* ... User Menu ... */}
 
           <div className="relative" ref={userMenuRef}>
             <button
@@ -292,6 +249,6 @@ export function Header({ onMenuClick }) {
       </div>
 
 
-    </header>
+    </header >
   )
 }

@@ -39,12 +39,12 @@ const CreateBitacoraModal = ({ isOpen, onClose, onSave, viajes, operadores, clie
           setFormData({
             casetas: datosGenerados.iave?.toString() || '',
             dieselLitros: datosGenerados.diesel?.toString() || '',
-            comisionOperador: datosGenerados.nomina?.toString() || '',
+            comisionOperador: datosGenerados.comision?.toString() || '',
             gastosExtras: datosGenerados.gastosExtras?.toString() || '',
             costoTotal: (
               (parseFloat(datosGenerados.iave) || 0) +
               (parseFloat(datosGenerados.diesel) || 0) +
-              (parseFloat(datosGenerados.nomina) || 0) +
+              (parseFloat(datosGenerados.comision) || 0) +
               (parseFloat(datosGenerados.gastosExtras) || 0)
             ).toString()
           })

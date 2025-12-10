@@ -87,8 +87,8 @@ const CreateNominaFijaModal = ({ isOpen, onClose, onSubmit }) => {
             newErrors.deben = 'El debe debe ser mayor o igual a 0'
         }
 
-        // Validar cuenta (máximo 8 dígitos)
-        if (formData.cuenta && formData.cuenta.length > 8) {
+        // Validar cuenta (máximo 10 dígitos)
+        if (formData.cuenta && formData.cuenta.length > 10) {
             newErrors.cuenta = 'La cuenta no puede tener más de 8 dígitos'
         }
 
@@ -216,8 +216,8 @@ const CreateNominaFijaModal = ({ isOpen, onClose, onSubmit }) => {
                                     name="cuenta"
                                     value={formData.cuenta}
                                     onChange={handleChange}
-                                    placeholder="Número de cuenta (máx. 8 dígitos)"
-                                    maxLength={8}
+                                    placeholder="Número de cuenta (máx. 10 dígitos)"
+                                    maxLength={10}
                                     className={`w-full pl-10 pr-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${errors.cuenta ? 'border-red-300' : 'border-slate-300'}`}
                                 />
                             </div>
