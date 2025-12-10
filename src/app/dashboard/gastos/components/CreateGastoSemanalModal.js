@@ -37,7 +37,7 @@ const CreateGastoSemanalModal = ({ isOpen, onClose, onSubmit }) => {
         try {
           // Cargar datos generados por la API
           const datosGenerados = await gastosService.getGastosGenerados()
-          
+
           setFormData({
             semanaInicio: datosGenerados.fechaInicio || '',
             semanaFin: datosGenerados.fechaFin || '',
@@ -56,7 +56,7 @@ const CreateGastoSemanalModal = ({ isOpen, onClose, onSubmit }) => {
             gastoExtrahordinario: '0',
             observaciones: ''
           })
-          
+
           setTotalViajes(datosGenerados.totalViajes || 0)
           setErrors({})
         } catch (error) {
@@ -133,7 +133,7 @@ const CreateGastoSemanalModal = ({ isOpen, onClose, onSubmit }) => {
   const handleChange = (e) => {
     const { name, value } = e.target
     setFormData(prev => ({ ...prev, [name]: value }))
-    
+
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }))
     }
@@ -141,7 +141,7 @@ const CreateGastoSemanalModal = ({ isOpen, onClose, onSubmit }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    
+
     if (!validate()) {
       return
     }
@@ -177,9 +177,9 @@ const CreateGastoSemanalModal = ({ isOpen, onClose, onSubmit }) => {
       <div className="bg-white rounded-xl shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="p-6 border-b border-slate-200">
-          <h2 className="text-2xl font-bold text-slate-900">Nuevo Gasto Semanal</h2>
-          <p className="text-sm text-slate-600 mt-1">Registrar gastos de la semana</p>
-          
+          <h2 className="text-2xl font-bold text-slate-900">Nuevo Gasto</h2>
+          <p className="text-sm text-slate-600 mt-1">Registrar gastos</p>
+
           {/* Mostrar total de viajes si está disponible */}
           {totalViajes > 0 && (
             <div className="mt-3 inline-flex items-center px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg text-sm font-medium">
@@ -216,56 +216,7 @@ const CreateGastoSemanalModal = ({ isOpen, onClose, onSubmit }) => {
             </div>
           )}
 
-          {/* Fechas de Semana */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">
-                Inicio de Semana <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
-                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
-                <input
-                  type="date"
-                  name="semanaInicio"
-                  value={formData.semanaInicio}
-                  onChange={handleChange}
-                  className={`w-full pl-10 pr-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${
-                    errors.semanaInicio ? 'border-red-300' : 'border-slate-300'
-                  }`}
-                />
-              </div>
-              {errors.semanaInicio && (
-                <p className="mt-1 text-sm text-red-600 flex items-center space-x-1">
-                  <AlertCircle className="h-4 w-4" />
-                  <span>{errors.semanaInicio}</span>
-                </p>
-              )}
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">
-                Fin de Semana <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
-                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
-                <input
-                  type="date"
-                  name="semanaFin"
-                  value={formData.semanaFin}
-                  onChange={handleChange}
-                  className={`w-full pl-10 pr-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${
-                    errors.semanaFin ? 'border-red-300' : 'border-slate-300'
-                  }`}
-                />
-              </div>
-              {errors.semanaFin && (
-                <p className="mt-1 text-sm text-red-600 flex items-center space-x-1">
-                  <AlertCircle className="h-4 w-4" />
-                  <span>{errors.semanaFin}</span>
-                </p>
-              )}
-            </div>
-          </div>
+          {/* Fechas de Semana manejadas internamente */}
 
           {/* Gastos - Grid 3 columnas */}
           <div className="grid grid-cols-3 gap-4">
@@ -539,7 +490,7 @@ const CreateGastoSemanalModal = ({ isOpen, onClose, onSubmit }) => {
               className="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center justify-center space-x-2"
             >
               <Save className="h-4 w-4" />
-              <span>Guardar Gasto Semanal</span>
+              <span>Guardar gasto</span>
             </button>
           </div>
         </form>

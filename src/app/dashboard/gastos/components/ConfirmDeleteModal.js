@@ -19,7 +19,7 @@ const ConfirmDeleteModal = ({ isOpen, onClose, onConfirm, gasto, calcularTotal }
       <div className="bg-white rounded-xl shadow-xl w-full max-w-md">
         {/* Header */}
         <div className="p-6 border-b border-slate-200">
-          <h2 className="text-2xl font-bold text-slate-900">Eliminar Gasto Semanal</h2>
+          <h2 className="text-2xl font-bold text-slate-900">Eliminar Gasto</h2>
           <p className="text-sm text-slate-600 mt-1">Esta acción no se puede deshacer</p>
         </div>
 
@@ -29,7 +29,7 @@ const ConfirmDeleteModal = ({ isOpen, onClose, onConfirm, gasto, calcularTotal }
           <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start space-x-3">
             <AlertTriangle className="h-5 w-5 text-red-600 shrink-0 mt-0.5" />
             <div className="text-sm text-red-800">
-              <p className="font-semibold mb-1">¿Está seguro de eliminar este gasto semanal?</p>
+              <p className="font-semibold mb-1">¿Está seguro de eliminar este gasto?</p>
               <p>Esta acción es permanente y no podrá recuperar la información.</p>
             </div>
           </div>
@@ -49,7 +49,7 @@ const ConfirmDeleteModal = ({ isOpen, onClose, onConfirm, gasto, calcularTotal }
             <div className="flex justify-between items-center">
               <div className="flex items-center space-x-2">
                 <DollarSign className="h-4 w-4 text-slate-600" />
-                <span className="text-sm text-slate-600">Total de Gastos</span>
+                <span className="text-sm text-slate-600">Total de gastos</span>
               </div>
               <span className="font-bold text-red-600 text-lg">
                 ${total.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
@@ -57,7 +57,7 @@ const ConfirmDeleteModal = ({ isOpen, onClose, onConfirm, gasto, calcularTotal }
             </div>
 
             <div className="pt-3 border-t border-slate-200">
-              <p className="text-xs text-slate-500 mb-1">ID de Gasto</p>
+              <p className="text-xs text-slate-500 mb-1">ID de gasto</p>
               <p className="text-sm text-slate-900 font-medium">#{gasto.id}</p>
             </div>
 

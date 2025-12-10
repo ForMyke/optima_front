@@ -67,7 +67,7 @@ const EditGastoSemanalModal = ({ isOpen, onClose, onSubmit, gasto }) => {
   const handleChange = (e) => {
     const { name, value } = e.target
     setFormData(prev => ({ ...prev, [name]: value }))
-    
+
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }))
     }
@@ -75,14 +75,14 @@ const EditGastoSemanalModal = ({ isOpen, onClose, onSubmit, gasto }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    
+
     if (!validate()) {
       return
     }
 
     // Obtener el ID del creador (puede ser un objeto o un número)
-    const creadoPorId = typeof gasto.creadoPor === 'object' 
-      ? gasto.creadoPor?.id 
+    const creadoPorId = typeof gasto.creadoPor === 'object'
+      ? gasto.creadoPor?.id
       : gasto.creadoPor
 
     const gastoData = {
@@ -113,62 +113,13 @@ const EditGastoSemanalModal = ({ isOpen, onClose, onSubmit, gasto }) => {
       <div className="bg-white rounded-xl shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="p-6 border-b border-slate-200">
-          <h2 className="text-2xl font-bold text-slate-900">Editar Gasto Semanal</h2>
-          <p className="text-sm text-slate-600 mt-1">Modificar gastos de la semana #{gasto.id}</p>
+          <h2 className="text-2xl font-bold text-slate-900">Editar Gasto</h2>
+          <p className="text-sm text-slate-600 mt-1">Modificar gasto #{gasto.id}</p>
         </div>
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          {/* Fechas de Semana */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">
-                Inicio de Semana <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
-                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
-                <input
-                  type="date"
-                  name="semanaInicio"
-                  value={formData.semanaInicio}
-                  onChange={handleChange}
-                  className={`w-full pl-10 pr-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${
-                    errors.semanaInicio ? 'border-red-300' : 'border-slate-300'
-                  }`}
-                />
-              </div>
-              {errors.semanaInicio && (
-                <p className="mt-1 text-sm text-red-600 flex items-center space-x-1">
-                  <AlertCircle className="h-4 w-4" />
-                  <span>{errors.semanaInicio}</span>
-                </p>
-              )}
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">
-                Fin de Semana <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
-                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
-                <input
-                  type="date"
-                  name="semanaFin"
-                  value={formData.semanaFin}
-                  onChange={handleChange}
-                  className={`w-full pl-10 pr-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${
-                    errors.semanaFin ? 'border-red-300' : 'border-slate-300'
-                  }`}
-                />
-              </div>
-              {errors.semanaFin && (
-                <p className="mt-1 text-sm text-red-600 flex items-center space-x-1">
-                  <AlertCircle className="h-4 w-4" />
-                  <span>{errors.semanaFin}</span>
-                </p>
-              )}
-            </div>
-          </div>
+          {/* Fechas de Semana manejadas internamente */}
 
           {/* Gastos - Grid 3 columnas */}
           <div className="grid grid-cols-3 gap-4">

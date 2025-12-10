@@ -167,7 +167,7 @@ export default function GastosSemanalesPage() {
             className="px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2 font-medium"
           >
             <Plus className="h-5 w-5" />
-            <span>Nuevo Gasto Semanal</span>
+            <span>Nuevo Gasto</span>
           </button>
         </div>
       </div>

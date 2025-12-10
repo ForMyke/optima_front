@@ -13,9 +13,9 @@ const ViewGastoSemanalModal = ({ isOpen, onClose, gasto, calcularTotal }) => {
   }
 
   const formatCurrency = (amount) => {
-    return `$${parseFloat(amount || 0).toLocaleString('es-MX', { 
+    return `$${parseFloat(amount || 0).toLocaleString('es-MX', {
       minimumFractionDigits: 2,
-      maximumFractionDigits: 2 
+      maximumFractionDigits: 2
     })}`
   }
 
@@ -42,29 +42,13 @@ const ViewGastoSemanalModal = ({ isOpen, onClose, gasto, calcularTotal }) => {
       <div className="bg-white rounded-xl shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="p-6 border-b border-slate-200">
-          <h2 className="text-2xl font-bold text-slate-900">Detalles de Gasto Semanal</h2>
-          <p className="text-sm text-slate-600 mt-1">Semana #{gasto.id}</p>
+          <h2 className="text-2xl font-bold text-slate-900">Detalles de Gasto</h2>
+          <p className="text-sm text-slate-600 mt-1">Gasto #{gasto.id}</p>
         </div>
 
         {/* Content */}
         <div className="p-6 space-y-6">
-          {/* Periodo */}
-          <div className="bg-blue-50 rounded-xl p-4">
-            <h3 className="font-semibold text-slate-900 mb-3 flex items-center space-x-2">
-              <Calendar className="h-5 w-5 text-blue-600" />
-              <span>Período</span>
-            </h3>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-xs text-slate-600 mb-1">Inicio de Semana</p>
-                <p className="font-semibold text-slate-900">{formatDate(gasto.semanaInicio)}</p>
-              </div>
-              <div>
-                <p className="text-xs text-slate-600 mb-1">Fin de Semana</p>
-                <p className="font-semibold text-slate-900">{formatDate(gasto.semanaFin)}</p>
-              </div>
-            </div>
-          </div>
+
 
           {/* Desglose de Gastos */}
           <div className="bg-slate-50 rounded-xl p-4">
@@ -110,7 +94,7 @@ const ViewGastoSemanalModal = ({ isOpen, onClose, gasto, calcularTotal }) => {
                 <div>
                   <p className="mb-1">Creado por</p>
                   <p className="font-medium text-slate-700">
-                    {typeof gasto.creadoPor === 'object' 
+                    {typeof gasto.creadoPor === 'object'
                       ? gasto.creadoPor.nombre || gasto.creadoPor.email || `Usuario #${gasto.creadoPor.id}`
                       : `Usuario #${gasto.creadoPor}`
                     }

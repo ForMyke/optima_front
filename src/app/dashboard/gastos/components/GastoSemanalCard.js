@@ -35,7 +35,7 @@ const GastoSemanalCard = ({ gasto, calcularTotal, onEdit, onDelete, onViewDetail
         <div className="flex-1">
           <div className="flex items-center space-x-2 mb-2">
             <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-semibold">
-              Semana #{gasto.id}
+              Gasto #{gasto.id}
             </span>
           </div>
           <h3 className="text-lg font-bold text-slate-900">
