@@ -1,4 +1,5 @@
 import { X, User, Calendar, DollarSign, FileText, MessageSquare } from 'lucide-react'
+import { formatDateUTC } from '@/utils/dateUtils'
 
 const ViewFacturaExtraModal = ({ isOpen, onClose, factura, clientes }) => {
     if (!isOpen || !factura) return null
@@ -10,14 +11,8 @@ const ViewFacturaExtraModal = ({ isOpen, onClose, factura, clientes }) => {
     const clienteEmail = cliente?.email || 'Sin email'
 
     // Formatear fechas
-    const formatDate = (dateString) => {
-        if (!dateString) return 'Sin fecha'
-        return new Date(dateString).toLocaleDateString('es-MX', {
-            day: '2-digit',
-            month: 'long',
-            year: 'numeric'
-        })
-    }
+    // Formatear fechas
+    const formatDate = (dateString) => formatDateUTC(dateString)
 
     // Formatear monto
     const formatCurrency = (amount) => {

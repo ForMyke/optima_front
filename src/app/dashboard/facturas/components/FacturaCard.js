@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import { formatDateUTC } from '@/utils/dateUtils'
 import {
   FileText,
   MoreVertical,
@@ -164,7 +165,7 @@ const FacturaCard = ({ factura, clientes, onPagar, onViewDetails, onEstatusChang
                 Vencimiento:
               </span>
               <span className="text-sm font-medium text-slate-900">
-                {factura.fechaVencimiento ? new Date(factura.fechaVencimiento).toLocaleDateString('es-MX') : 'N/A'}
+                {formatDateUTC(factura.fechaVencimiento)}
               </span>
             </div>
           </div>
@@ -213,7 +214,7 @@ const FacturaCard = ({ factura, clientes, onPagar, onViewDetails, onEstatusChang
             <div className="pt-3 border-t border-slate-100 bg-emerald-50 rounded-lg p-3 -mx-3">
               <p className="text-xs text-emerald-600 font-medium mb-1">Pagada el:</p>
               <p className="text-sm text-emerald-700 font-semibold">
-                {new Date(factura.fechaPago).toLocaleDateString('es-MX')}
+                {formatDateUTC(factura.fechaPago)}
               </p>
               {factura.metodoPago && (
                 <p className="text-xs text-emerald-600 mt-1">

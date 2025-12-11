@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { formatIsoDateForInput } from '@/utils/dateUtils'
 import { X, Save, Calendar, User, DollarSign, FileText, AlertCircle } from 'lucide-react'
 
 const EditFacturaExtraModal = ({ isOpen, onClose, onSubmit, factura, clientes }) => {
@@ -18,8 +19,8 @@ const EditFacturaExtraModal = ({ isOpen, onClose, onSubmit, factura, clientes })
     if (isOpen && factura) {
       setFormData({
         numeroFactura: factura.numeroFactura || '',
-        fechaEmision: factura.fechaEmision || '',
-        fechaVencimiento: factura.fechaVencimiento || '',
+        fechaEmision: formatIsoDateForInput(factura.fechaEmision),
+        fechaVencimiento: formatIsoDateForInput(factura.fechaVencimiento),
         clienteId: factura.clienteId || '',
         monto: factura.monto || '',
         concepto: factura.concepto || '',
@@ -67,7 +68,7 @@ const EditFacturaExtraModal = ({ isOpen, onClose, onSubmit, factura, clientes })
   const handleChange = (e) => {
     const { name, value } = e.target
     setFormData(prev => ({ ...prev, [name]: value }))
-    
+
     // Limpiar error del campo
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }))
@@ -76,7 +77,7 @@ const EditFacturaExtraModal = ({ isOpen, onClose, onSubmit, factura, clientes })
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    
+
     if (!validate()) {
       return
     }
@@ -118,9 +119,8 @@ const EditFacturaExtraModal = ({ isOpen, onClose, onSubmit, factura, clientes })
                 value={formData.numeroFactura}
                 onChange={handleChange}
                 placeholder="EXTRA-001"
-                className={`w-full pl-10 pr-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${
-                  errors.numeroFactura ? 'border-red-300' : 'border-slate-300'
-                }`}
+                className={`w-full pl-10 pr-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${errors.numeroFactura ? 'border-red-300' : 'border-slate-300'
+                  }`}
               />
             </div>
             {errors.numeroFactura && (
@@ -144,9 +144,8 @@ const EditFacturaExtraModal = ({ isOpen, onClose, onSubmit, factura, clientes })
                   name="fechaEmision"
                   value={formData.fechaEmision}
                   onChange={handleChange}
-                  className={`w-full pl-10 pr-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${
-                    errors.fechaEmision ? 'border-red-300' : 'border-slate-300'
-                  }`}
+                  className={`w-full pl-10 pr-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${errors.fechaEmision ? 'border-red-300' : 'border-slate-300'
+                    }`}
                 />
               </div>
               {errors.fechaEmision && (
@@ -168,9 +167,8 @@ const EditFacturaExtraModal = ({ isOpen, onClose, onSubmit, factura, clientes })
                   name="fechaVencimiento"
                   value={formData.fechaVencimiento}
                   onChange={handleChange}
-                  className={`w-full pl-10 pr-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${
-                    errors.fechaVencimiento ? 'border-red-300' : 'border-slate-300'
-                  }`}
+                  className={`w-full pl-10 pr-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${errors.fechaVencimiento ? 'border-red-300' : 'border-slate-300'
+                    }`}
                 />
               </div>
               {errors.fechaVencimiento && (
@@ -193,9 +191,8 @@ const EditFacturaExtraModal = ({ isOpen, onClose, onSubmit, factura, clientes })
                 name="clienteId"
                 value={formData.clienteId}
                 onChange={handleChange}
-                className={`w-full pl-10 pr-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all appearance-none ${
-                  errors.clienteId ? 'border-red-300' : 'border-slate-300'
-                }`}
+                className={`w-full pl-10 pr-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all appearance-none ${errors.clienteId ? 'border-red-300' : 'border-slate-300'
+                  }`}
               >
                 <option value="">Seleccionar cliente...</option>
                 {clientes.map((cliente) => (
@@ -228,9 +225,8 @@ const EditFacturaExtraModal = ({ isOpen, onClose, onSubmit, factura, clientes })
                 placeholder="5000.00"
                 step="0.01"
                 min="0"
-                className={`w-full pl-10 pr-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${
-                  errors.monto ? 'border-red-300' : 'border-slate-300'
-                }`}
+                className={`w-full pl-10 pr-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${errors.monto ? 'border-red-300' : 'border-slate-300'
+                  }`}
               />
             </div>
             {errors.monto && (
@@ -252,9 +248,8 @@ const EditFacturaExtraModal = ({ isOpen, onClose, onSubmit, factura, clientes })
               onChange={handleChange}
               placeholder="Descripción del servicio o concepto de cobro..."
               rows="3"
-              className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all resize-none ${
-                errors.concepto ? 'border-red-300' : 'border-slate-300'
-              }`}
+              className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all resize-none ${errors.concepto ? 'border-red-300' : 'border-slate-300'
+                }`}
             />
             {errors.concepto && (
               <p className="mt-1 text-sm text-red-600 flex items-center space-x-1">

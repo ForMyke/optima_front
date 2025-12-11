@@ -1,6 +1,7 @@
 'use client'
 
 import { FileText, User, DollarSign, Calendar, CheckCircle, Clock, X } from 'lucide-react'
+import { formatDateUTC } from '@/utils/dateUtils'
 
 const ViewFacturaModal = ({ isOpen, onClose, factura, clientes = [] }) => {
   if (!isOpen || !factura) return null
@@ -141,17 +142,17 @@ const ViewFacturaModal = ({ isOpen, onClose, factura, clientes = [] }) => {
                 <div>
                   <p className="text-sm text-slate-600 font-medium mb-1">Fecha de emisión</p>
                   <p className="text-base text-slate-900">
-                    {factura.fechaEmision ? new Date(factura.fechaEmision).toLocaleDateString('es-MX') : 'N/A'}
+                    {formatDateUTC(factura.fechaEmision)}
                   </p>
                 </div>
                 <div>
                   <p className="text-sm text-slate-600 font-medium mb-1">Fecha de vencimiento</p>
                   <p className="text-base text-slate-900">
-                    {factura.fechaVencimiento ? new Date(factura.fechaVencimiento).toLocaleDateString('es-MX') : 'N/A'}
+                    {formatDateUTC(factura.fechaVencimiento)}
                   </p>
                 </div>
               </div>
-              
+
               {factura.estatus === 'PAGADA' && factura.fechaPago && (
                 <div className="pt-3 border-t border-slate-200">
                   <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3">
@@ -163,7 +164,7 @@ const ViewFacturaModal = ({ isOpen, onClose, factura, clientes = [] }) => {
                       <div>
                         <p className="text-xs text-emerald-600 font-medium mb-1">Fecha de pago</p>
                         <p className="text-sm text-emerald-900 font-semibold">
-                          {new Date(factura.fechaPago).toLocaleDateString('es-MX')}
+                          {formatDateUTC(factura.fechaPago)}
                         </p>
                       </div>
                       {factura.metodoPago && (
