@@ -37,6 +37,7 @@ import { clientsService } from '@/app/services/clientsService'
 import { operadoresService } from '@/app/services/operadoresService'
 import { facturaService } from '@/app/services/facturaService'
 import { refaccionesService } from '@/app/services/refaccionesService'
+import gastosService from '@/app/services/gastosService'
 import { authService } from '@/app/services/authService'
 import { canViewChart, canViewStatCard, getRoleDisplayName } from '@/config/permissions'
 
@@ -101,6 +102,7 @@ export default function GraficosPage() {
   const [operadores, setOperadores] = useState([])
   const [facturas, setFacturas] = useState([])
   const [refacciones, setRefacciones] = useState([])
+  const [gastosGenerados, setGastosGenerados] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
   const [selectedPeriod, setSelectedPeriod] = useState('6m') // diario, semanal, 1m, 3m, 6m, 1a
   const [userRole, setUserRole] = useState(null)
@@ -137,17 +139,18 @@ export default function GraficosPage() {
   const loadData = async () => {
     setIsLoading(true)
     try {
-      const [viajesData, bitacorasData, unidadesData, clientesData, operadoresData, facturasData, refaccionesData] = await Promise.all([
+      const [viajesData, bitacorasData, unidadesData, clientesData, operadoresData, facturasData, refaccionesData, gastosGeneradosData] = await Promise.all([
         viajesService.getViajes(0, 1000).catch(() => ({ content: [] })),
         bitacoraService.getAll().catch(() => ({ content: [] })),
         unidadesService.getAll().catch(() => ({ content: [] })),
         clientsService.getClients(0, 1000).catch(() => ({ content: [] })),
         operadoresService.getOperadores(0, 1000).catch(() => ({ content: [] })),
         facturaService.getFacturas(0, 1000).catch(() => ({ content: [] })),
-        refaccionesService.getRefacciones(0, 1000).catch(() => ({ content: [] }))
+        refaccionesService.getRefacciones(0, 1000).catch(() => ({ content: [] })),
+        gastosService.getGastosGenerados().catch(() => null)
       ])
 
-      console.log('Datos cargados:', { viajesData, bitacorasData, unidadesData, clientesData, operadoresData, facturasData, refaccionesData })
+      console.log('Datos cargados:', { viajesData, bitacorasData, unidadesData, clientesData, operadoresData, facturasData, refaccionesData, gastosGeneradosData })
 
       // Extraer datos de la estructura paginada (content) o usar directamente si es array
       setViajes(Array.isArray(viajesData?.content) ? viajesData.content : Array.isArray(viajesData) ? viajesData : [])
@@ -157,6 +160,7 @@ export default function GraficosPage() {
       setOperadores(Array.isArray(operadoresData?.content) ? operadoresData.content : Array.isArray(operadoresData) ? operadoresData : [])
       setFacturas(Array.isArray(facturasData?.content) ? facturasData.content : Array.isArray(facturasData) ? facturasData : [])
       setRefacciones(Array.isArray(refaccionesData?.content) ? refaccionesData.content : Array.isArray(refaccionesData) ? refaccionesData : [])
+      setGastosGenerados(gastosGeneradosData)
     } catch (error) {
       console.error('Error al cargar datos:', error)
       toast.error('Error al cargar los datos')
@@ -286,15 +290,26 @@ export default function GraficosPage() {
   }
 
   const getGastosPorCategoria = () => {
+    if (gastosGenerados) {
+      return [
+        { name: 'Diesel', value: Math.round(parseFloat(gastosGenerados.totalCombustible || 0)) },
+        { name: 'Casetas', value: Math.round(parseFloat(gastosGenerados.totalCasetas || 0)) },
+        { name: 'Comisiones', value: Math.round(parseFloat(gastosGenerados.totalComisiones || 0)) },
+        { name: 'Sueldos', value: Math.round(parseFloat(gastosGenerados.totalSueldos || 0)) },
+        { name: 'IMSS', value: Math.round(parseFloat(gastosGenerados.totalImss || 0)) },
+        { name: 'Nomina Admin', value: Math.round(parseFloat(gastosGenerados.totalNominaAdmin || 0)) },
+        { name: 'Otros Gastos', value: Math.round(parseFloat(gastosGenerados.totalOtros || 0)) }
+      ].filter(item => item.value > 0)
+    }
+
     if (!Array.isArray(bitacoras) || bitacoras.length === 0) return []
 
     let diesel = 0
     let casetas = 0
     let extras = 0
     let comisiones = 0
-
+    // Keep fallback logic just in case, but prefer gastosGenerados
     bitacoras.forEach(bitacora => {
-      // Usar los valores directos de la API
       diesel += parseFloat(bitacora.dieselLitros || 0)
       casetas += parseFloat(bitacora.casetas || 0)
       extras += parseFloat(bitacora.gastosExtras || 0)
