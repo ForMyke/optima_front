@@ -1,8 +1,11 @@
-import { MoreVertical, Eye, Edit, Trash2, User, Calendar, DollarSign, Wallet } from 'lucide-react'
+import { MoreVertical, Eye, Edit, Trash2, User, Calendar, DollarSign, Wallet, FileDown } from 'lucide-react'
 import { useState } from 'react'
+import { exportNominaFijaPDF } from '@/utils/pdfExport'
+import toast from 'react-hot-toast'
 
 const NominaFijaCard = ({ nomina, onEdit, onDelete, onViewDetails }) => {
     const [showMenu, setShowMenu] = useState(false)
+    const [generatingPDF, setGeneratingPDF] = useState(false)
 
     // Calcular el total neto
     const totalNeto = (
@@ -26,6 +29,21 @@ const NominaFijaCard = ({ nomina, onEdit, onDelete, onViewDetails }) => {
             month: 'short',
             day: 'numeric'
         })
+    }
+
+    const handleGeneratePDF = () => {
+        setGeneratingPDF(true)
+        const toastId = toast.loading('Generando recibo...')
+        try {
+            exportNominaFijaPDF(nomina)
+            toast.success('Recibo generado', { id: toastId })
+        } catch (error) {
+            console.error('Error generating PDF:', error)
+            toast.error('Error al generar recibo', { id: toastId })
+        } finally {
+            setGeneratingPDF(false)
+            setShowMenu(false)
+        }
     }
 
     return (
@@ -65,6 +83,14 @@ const NominaFijaCard = ({ nomina, onEdit, onDelete, onViewDetails }) => {
                                     onClick={() => setShowMenu(false)}
                                 />
                                 <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-slate-200 py-1 z-20">
+                                    <button
+                                        onClick={handleGeneratePDF}
+                                        disabled={generatingPDF}
+                                        className="w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 flex items-center space-x-2 disabled:opacity-50"
+                                    >
+                                        <FileDown className="h-4 w-4" />
+                                        <span>{generatingPDF ? 'Generando...' : 'Recibo Nomina'}</span>
+                                    </button>
                                     <button
                                         onClick={() => {
                                             onViewDetails(nomina)

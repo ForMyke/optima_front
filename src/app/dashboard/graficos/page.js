@@ -136,10 +136,14 @@ export default function GraficosPage() {
     loadData()
   }, [])
 
+  const [gastosSemanales, setGastosSemanales] = useState([])
+
+  // ... (existing states)
+
   const loadData = async () => {
     setIsLoading(true)
     try {
-      const [viajesData, bitacorasData, unidadesData, clientesData, operadoresData, facturasData, refaccionesData, gastosGeneradosData] = await Promise.all([
+      const [viajesData, bitacorasData, unidadesData, clientesData, operadoresData, facturasData, refaccionesData, gastosGeneradosData, gastosSemanalesData] = await Promise.all([
         viajesService.getViajes(0, 1000).catch(() => ({ content: [] })),
         bitacoraService.getAll().catch(() => ({ content: [] })),
         unidadesService.getAll().catch(() => ({ content: [] })),
@@ -147,10 +151,11 @@ export default function GraficosPage() {
         operadoresService.getOperadores(0, 1000).catch(() => ({ content: [] })),
         facturaService.getFacturas(0, 1000).catch(() => ({ content: [] })),
         refaccionesService.getRefacciones(0, 1000).catch(() => ({ content: [] })),
-        gastosService.getGastosGenerados().catch(() => null)
+        gastosService.getGastosGenerados().catch(() => null),
+        gastosService.getGastosSemanales(0, 1000).catch(() => ({ content: [] }))
       ])
 
-      console.log('Datos cargados:', { viajesData, bitacorasData, unidadesData, clientesData, operadoresData, facturasData, refaccionesData, gastosGeneradosData })
+      console.log('Datos cargados:', { viajesData, bitacorasData, unidadesData, clientesData, operadoresData, facturasData, refaccionesData, gastosGeneradosData, gastosSemanalesData })
 
       // Extraer datos de la estructura paginada (content) o usar directamente si es array
       setViajes(Array.isArray(viajesData?.content) ? viajesData.content : Array.isArray(viajesData) ? viajesData : [])
@@ -161,6 +166,7 @@ export default function GraficosPage() {
       setFacturas(Array.isArray(facturasData?.content) ? facturasData.content : Array.isArray(facturasData) ? facturasData : [])
       setRefacciones(Array.isArray(refaccionesData?.content) ? refaccionesData.content : Array.isArray(refaccionesData) ? refaccionesData : [])
       setGastosGenerados(gastosGeneradosData)
+      setGastosSemanales(Array.isArray(gastosSemanalesData?.content) ? gastosSemanalesData.content : Array.isArray(gastosSemanalesData) ? gastosSemanalesData : [])
     } catch (error) {
       console.error('Error al cargar datos:', error)
       toast.error('Error al cargar los datos')
@@ -241,8 +247,45 @@ export default function GraficosPage() {
     }))
   }
 
-  // Procesar datos para gráficos de gastos (bitácoras)
+  // Procesar datos para gráficos de gastos
+  // Procesar datos para gráficos de gastos
   const getGastosPorMes = () => {
+    // Si tenemos gastos semanales, usarlos como fuente principal
+    if (Array.isArray(gastosSemanales) && gastosSemanales.length > 0) {
+      const periodos = {}
+
+      gastosSemanales.forEach(gasto => {
+        if (gasto.semanaInicio) {
+          const fecha = new Date(gasto.semanaInicio)
+          const anio = fecha.getFullYear()
+          const mes = fecha.getMonth()
+          const clave = `${anio}-${String(mes + 1).padStart(2, '0')}`
+          const nombrePeriodo = fecha.toLocaleDateString('es-MX', { month: 'short', year: '2-digit' })
+
+          if (!periodos[clave]) {
+            periodos[clave] = { mes: nombrePeriodo, total: 0, orden: fecha.getTime() }
+          }
+
+          // Sumar componentes explícitos para asegurar consistencia
+          const totalGastoSemanal = (
+            parseFloat(gasto.diesel || 0) +
+            parseFloat(gasto.iave || 0) + // IAVE = Casetas
+            parseFloat(gasto.nomina || 0) +
+            parseFloat(gasto.gastosExtras || 0)
+          )
+
+          periodos[clave].total += totalGastoSemanal
+        }
+      })
+
+      const limit = getDataLimit()
+      return Object.values(periodos)
+        .sort((a, b) => a.orden - b.orden)
+        .slice(-limit)
+        .map(({ mes, total }) => ({ mes, total: Math.round(total) }))
+    }
+
+    // Fallback a bitacoras si no hay gastos semanales
     if (!Array.isArray(bitacoras) || bitacoras.length === 0) return []
 
     const periodos = {}
@@ -266,7 +309,6 @@ export default function GraficosPage() {
           nombrePeriodo = fecha.toLocaleDateString('es-MX', { month: 'short', year: '2-digit' })
         }
 
-        // Sumar los gastos desglosados (no usar costoTotal)
         const gastoTotal = (
           parseFloat(bitacora.dieselLitros || 0) +
           parseFloat(bitacora.casetas || 0) +
@@ -281,7 +323,6 @@ export default function GraficosPage() {
       }
     })
 
-    // Ordenar por fecha y tomar según el período seleccionado
     const limit = getDataLimit()
     return Object.values(periodos)
       .sort((a, b) => a.orden - b.orden)
@@ -290,6 +331,45 @@ export default function GraficosPage() {
   }
 
   const getGastosPorCategoria = () => {
+    // Usar gastos semanales acumulados según el periodo seleccionado
+    if (Array.isArray(gastosSemanales) && gastosSemanales.length > 0) {
+      let diesel = 0
+      let casetas = 0
+      let nomina = 0
+      let extras = 0
+
+      // Filtrar por fecha según selectedPeriod
+      const today = new Date()
+      const limitDate = new Date()
+
+      switch (selectedPeriod) {
+        case 'diario': limitDate.setDate(today.getDate() - 7); break;
+        case 'semanal': limitDate.setDate(today.getDate() - 28); break;
+        case '1m': limitDate.setMonth(today.getMonth() - 1); break;
+        case '3m': limitDate.setMonth(today.getMonth() - 3); break;
+        case '6m': limitDate.setMonth(today.getMonth() - 6); break;
+        case '1a': limitDate.setFullYear(today.getFullYear() - 1); break;
+        default: limitDate.setMonth(today.getMonth() - 6);
+      }
+
+      gastosSemanales.forEach(gasto => {
+        const fecha = new Date(gasto.semanaInicio)
+        if (fecha >= limitDate) {
+          diesel += parseFloat(gasto.diesel || 0)
+          casetas += parseFloat(gasto.iave || 0)
+          nomina += parseFloat(gasto.nomina || 0)
+          extras += parseFloat(gasto.gastosExtras || 0)
+        }
+      })
+
+      return [
+        { name: 'Diesel', value: Math.round(diesel) },
+        { name: 'Casetas (IAVE)', value: Math.round(casetas) },
+        { name: 'Nómina', value: Math.round(nomina) },
+        { name: 'Gastos Extras', value: Math.round(extras) }
+      ].filter(item => item.value > 0)
+    }
+
     if (gastosGenerados) {
       return [
         { name: 'Diesel', value: Math.round(parseFloat(gastosGenerados.totalCombustible || 0)) },
@@ -325,7 +405,7 @@ export default function GraficosPage() {
   }
 
   const getIngresoVsGasto = () => {
-    if ((!Array.isArray(viajes) || viajes.length === 0) && (!Array.isArray(bitacoras) || bitacoras.length === 0)) return []
+    if ((!Array.isArray(viajes) || viajes.length === 0) && (!Array.isArray(bitacoras) || bitacoras.length === 0) && (!Array.isArray(gastosSemanales) || gastosSemanales.length === 0)) return []
 
     const periodos = {}
 
@@ -357,8 +437,38 @@ export default function GraficosPage() {
       })
     }
 
-    // Gastos de bitácoras (sumar los conceptos desglosados)
-    if (Array.isArray(bitacoras)) {
+    // Gastos: Priorizar gastos semanales, fallback a bitácoras
+    if (Array.isArray(gastosSemanales) && gastosSemanales.length > 0) {
+      gastosSemanales.forEach(gasto => {
+        if (gasto.semanaInicio) {
+          const fecha = new Date(gasto.semanaInicio)
+          let clave, nombrePeriodo
+
+          if (selectedPeriod === 'diario') {
+            // Nota: Gastos semanales no se mapean bien a diario, se asignan al día de inicio de semana
+            clave = fecha.toISOString().split('T')[0]
+            nombrePeriodo = fecha.toLocaleDateString('es-MX', { day: 'numeric', month: 'short' })
+          } else if (selectedPeriod === 'semanal') {
+            const inicioSemana = new Date(fecha)
+            // Ya es inicio de semana
+            clave = inicioSemana.toISOString().split('T')[0]
+            nombrePeriodo = `Sem ${inicioSemana.toLocaleDateString('es-MX', { day: 'numeric', month: 'short' })}`
+          } else {
+            const anio = fecha.getFullYear()
+            const mes = fecha.getMonth()
+            clave = `${anio}-${String(mes + 1).padStart(2, '0')}`
+            nombrePeriodo = fecha.toLocaleDateString('es-MX', { month: 'short', year: '2-digit' })
+          }
+
+          if (!periodos[clave]) {
+            // Si no hubo ingresos en este periodo, lo creamos
+            periodos[clave] = { mes: nombrePeriodo, ingresos: 0, gastos: 0, orden: fecha.getTime() }
+          }
+          periodos[clave].gastos += parseFloat(gasto.totalGastos || 0)
+        }
+      })
+    } else if (Array.isArray(bitacoras)) {
+      // Fallback a bitácoras
       bitacoras.forEach(bitacora => {
         if (bitacora.fechaCarga || bitacora.fechaHoraInicio) {
           const fecha = new Date(bitacora.fechaCarga || bitacora.fechaHoraInicio)
@@ -820,7 +930,7 @@ export default function GraficosPage() {
             <div className="bg-white rounded-xl shadow-sm p-6 border border-slate-200">
               <div className="flex items-center justify-between mb-6">
                 <div>
-                  <h3 className="text-lg font-bold text-slate-900">Gastos Mensuales</h3>
+                  <h3 className="text-lg font-bold text-slate-900">Gastos semanales</h3>
                   <p className="text-sm text-slate-600">Evolución de gastos operativos</p>
                 </div>
                 <DollarSign className="h-6 w-6 text-blue-600" />
@@ -854,7 +964,7 @@ export default function GraficosPage() {
           </div>
         )}
         {/* Gráficos de viajes */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 my-6">
+        <div className="grid grid-cols-1 lg:grid-cols-1 gap-6 my-6">
           {/* Viajes por mes */}
           {canViewChart(userRole, 'viajes-mes') && (
             <div className="bg-white rounded-xl shadow-sm p-6 border border-slate-200">
@@ -891,39 +1001,6 @@ export default function GraficosPage() {
             </div>
           )}
 
-          {/* Viajes por estado */}
-          {canViewChart(userRole, 'viajes-estado') && (
-            <div className="bg-white rounded-xl shadow-sm p-6 border border-slate-200">
-              <div className="flex items-center justify-between mb-6">
-                <div>
-                  <h3 className="text-lg font-bold text-slate-900">Viajes por Estado</h3>
-                  <p className="text-sm text-slate-600">Distribución actual</p>
-                </div>
-                <Activity className="h-6 w-6 text-blue-600" />
-              </div>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={getViajesPorEstado()}>
-                  <defs>
-                    {Object.entries(COLORS.status).map(([key, color]) => (
-                      <linearGradient key={key} id={`gradient-${key}`} x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor={color} stopOpacity={0.9} />
-                        <stop offset="100%" stopColor={color} stopOpacity={0.6} />
-                      </linearGradient>
-                    ))}
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
-                  <XAxis dataKey="displayName" stroke="#334155" style={{ fontSize: '12px' }} />
-                  <YAxis stroke="#334155" style={{ fontSize: '12px' }} />
-                  <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(59, 130, 246, 0.05)' }} />
-                  <Bar dataKey="value" name="Cantidad" radius={[8, 8, 0, 0]}>
-                    {getViajesPorEstado().map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={`url(#gradient-${entry.name})`} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          )}
         </div>
 
 

@@ -1,8 +1,12 @@
-import { MoreVertical, Eye, Edit, Trash2, User, Calendar, DollarSign, TrendingUp } from 'lucide-react'
+import { MoreVertical, Eye, Edit, Trash2, User, Calendar, DollarSign, TrendingUp, FileDown } from 'lucide-react'
 import { useState } from 'react'
+import { viajesService } from '@/app/services/viajesService'
+import { exportNominaOperativaPDF } from '@/utils/pdfExport'
+import toast from 'react-hot-toast'
 
 const NominaCard = ({ nomina, operadores, onEdit, onDelete, onViewDetails }) => {
     const [showMenu, setShowMenu] = useState(false)
+    const [generatingPDF, setGeneratingPDF] = useState(false)
 
     const operador = operadores.find(op => op.id === nomina.operadorId)
     const operadorNombre = nomina.nombre || operador?.nombre || 'Operador desconocido'
@@ -33,6 +37,31 @@ const NominaCard = ({ nomina, operadores, onEdit, onDelete, onViewDetails }) => 
             month: 'short',
             day: 'numeric'
         })
+    }
+
+    const handleGeneratePDF = async () => {
+        setGeneratingPDF(true)
+        const toastId = toast.loading('Generando recibo...')
+        try {
+            // Fetch viajes
+            let viajes = []
+            if (nomina.operadorId && nomina.periodoInicio && nomina.periodoFin) {
+                viajes = await viajesService.getViajesByOperadorFechas(
+                    nomina.operadorId,
+                    nomina.periodoInicio,
+                    nomina.periodoFin
+                )
+            }
+
+            exportNominaOperativaPDF(nomina, operador, viajes)
+            toast.success('Recibo generado', { id: toastId })
+        } catch (error) {
+            console.error('Error generating PDF:', error)
+            toast.error('Error al generar recibo', { id: toastId })
+        } finally {
+            setGeneratingPDF(false)
+            setShowMenu(false)
+        }
     }
 
     return (
@@ -72,6 +101,14 @@ const NominaCard = ({ nomina, operadores, onEdit, onDelete, onViewDetails }) => 
                                     onClick={() => setShowMenu(false)}
                                 />
                                 <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-slate-200 py-1 z-20">
+                                    <button
+                                        onClick={handleGeneratePDF}
+                                        disabled={generatingPDF}
+                                        className="w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 flex items-center space-x-2 disabled:opacity-50"
+                                    >
+                                        <FileDown className="h-4 w-4" />
+                                        <span>{generatingPDF ? 'Generando...' : 'Recibo Nomina'}</span>
+                                    </button>
                                     <button
                                         onClick={() => {
                                             onViewDetails(nomina)
@@ -120,7 +157,7 @@ const NominaCard = ({ nomina, operadores, onEdit, onDelete, onViewDetails }) => 
                     </span>
                 </div>
 
-                {/* Detalles financieros */}
+                {/* Detalles financieras */}
                 <div className="grid grid-cols-2 gap-3">
                     <div className="bg-slate-50 rounded-lg p-3">
                         <p className="text-xs text-slate-600 mb-1">Sueldo Base</p>

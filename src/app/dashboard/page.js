@@ -17,6 +17,7 @@ import { facturaService } from "@/app/services/facturaService";
 import finanzasService from "@/app/services/finanzasService";
 import { authService } from "@/app/services/authService";
 import toast from "react-hot-toast";
+import { ROLES, normalizeRole } from "@/config/permissions";
 
 // Componente para las tarjetas superiores (placeholder para futuras implementaciones)
 const StatCard = ({
@@ -397,11 +398,15 @@ const FacturasPagoParcialSection = ({
   );
 };
 
+
+
 const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [dashboardData, setDashboardData] = useState(null);
   const [diasHistorial, setDiasHistorial] = useState(30);
   const [diasCompletadas, setDiasCompletadas] = useState(10);
+  const [userRole, setUserRole] = useState(null);
+  const [userName, setUserName] = useState("");
 
   // Estados para Finanzas (Tabs Compactos)
   const [activeTab, setActiveTab] = useState("diario");
@@ -414,12 +419,27 @@ const Dashboard = () => {
   const [loadingFinanzas, setLoadingFinanzas] = useState(false);
 
   useEffect(() => {
-    loadDashboardData();
-  }, [diasHistorial, diasCompletadas]);
+    const user = authService.getUser();
+    if (user) {
+      setUserRole(normalizeRole(user.rol));
+      setUserName(user.nombre);
+    }
+  }, []);
 
   useEffect(() => {
-    loadFinanzasData();
-  }, [activeTab]);
+    if (userRole === ROLES.ADMIN) {
+      loadDashboardData();
+    } else if (userRole) {
+      // Si ya cargó el rol y no es admin, dejamos de cargar
+      setLoading(false);
+    }
+  }, [diasHistorial, diasCompletadas, userRole]);
+
+  useEffect(() => {
+    if (userRole === ROLES.ADMIN) {
+      loadFinanzasData();
+    }
+  }, [activeTab, userRole]);
 
   const loadFinanzasData = async () => {
     try {
@@ -503,6 +523,48 @@ const Dashboard = () => {
               className="bg-slate-200 h-20 rounded-lg animate-pulse"
             ></div>
           ))}
+        </div>
+      </div>
+    );
+  }
+
+  // Vista restringida para NO ADMIN
+  if (userRole !== ROLES.ADMIN) {
+    return (
+      <div className="p-4 bg-slate-50 min-h-screen flex flex-col items-center justify-center">
+        <div className="w-full max-w-2xl text-center space-y-6">
+          <div className="mx-auto w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center">
+            <Users className="h-10 w-10 text-blue-600" />
+          </div>
+
+          <div className="space-y-2">
+            <h1 className="text-3xl font-bold text-slate-900">
+              ¡Hola, {userName}!
+            </h1>
+            <p className="text-slate-600 text-lg">
+              Bienvenido al Sistema de Gestión FMPMEX
+            </p>
+          </div>
+
+          <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200">
+            <p className="text-slate-600 mb-6">
+              Tu perfil tiene acceso a las siguientes secciones del sistema.
+              Por favor selecciona una opción del menú lateral para comenzar.
+            </p>
+            <div className="flex items-center justify-center gap-2 text-sm text-slate-500 bg-slate-50 py-3 rounded-lg">
+              <CheckCircle className="h-4 w-4 text-green-500" />
+              <span>Tu sesión está activa y funcionando correctamente</span>
+            </div>
+          </div>
+
+          <p className="text-xs text-slate-400">
+            {new Date().toLocaleDateString("es-MX", {
+              weekday: "long",
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+            })}
+          </p>
         </div>
       </div>
     );

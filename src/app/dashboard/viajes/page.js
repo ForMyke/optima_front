@@ -24,7 +24,9 @@ import {
   Upload,
   X,
   FileDown,
-  FileText
+  FileText,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { viajesService } from '@/app/services/viajesService'
@@ -547,6 +549,10 @@ const ViajesPage = () => {
     completados: 0
   })
 
+  const [currentPage, setCurrentPage] = useState(0)
+  const [totalPages, setTotalPages] = useState(0)
+  const pageSize = 10
+
   // Nuevos estados para filtros de tiempo
   const [viewMode, setViewMode] = useState('week') // 'week' | 'month'
   const [timeTabs, setTimeTabs] = useState([])
@@ -588,30 +594,40 @@ const ViajesPage = () => {
 
   }, [viewMode])
 
-  const loadViajes = async () => {
+  const loadViajes = async (page = 0) => {
     try {
-      // Cargar TODOS los viajes siempre
-      const response = await viajesService.getViajes(0, 100)
+      setLoading(true)
+      const response = await viajesService.getViajes(page, pageSize)
       const viajesData = response.content || []
 
-      // Ordenar los viajes por ID de forma ascendente (1, 2, 3, 4...)
-      const viajesOrdenados = [...viajesData].sort((a, b) => a.id - b.id)
+      // Si la respuesta incluye información de paginación, actualizar el estado
+      if (response.totalPages !== undefined) {
+        setTotalPages(response.totalPages)
+      }
+
+      // Ordenar los viajes por ID de forma descendente (más recientes primero)
+      const viajesOrdenados = [...viajesData].sort((a, b) => b.id - a.id)
 
       setViajes(viajesOrdenados)
+      setCurrentPage(page)
 
-      // Calcular estadísticas
+      // Calcular estadísticas 
+      // Nota: Estas estadísticas serán solo de la página actual si no hay un endpoint de stats
       const pendientes = viajesData.filter(v => v.estado === 'PENDIENTE').length
       const enCurso = viajesData.filter(v => v.estado === 'EN_CURSO').length
       const completados = viajesData.filter(v => v.estado === 'COMPLETADO').length
 
       setStats({
-        total: viajesData.length,
+        total: response.totalElements || viajesData.length,
         pendientes,
         enCurso,
         completados
       })
     } catch (error) {
+      console.error('Error loading viajes:', error)
       toast.error('Error al cargar viajes')
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -666,7 +682,7 @@ const ViajesPage = () => {
     try {
       await viajesService.createViaje(viajeData, archivo)
       toast.success('Viaje creado exitosamente')
-      loadViajes()
+      loadViajes(0)
     } catch (error) {
       toast.error(error.message || 'Error al crear viaje')
       throw error
@@ -689,7 +705,7 @@ const ViajesPage = () => {
       toast.success('Viaje actualizado exitosamente')
       setShowEditModal(false)
       setSelectedViaje(null)
-      loadViajes()
+      loadViajes(currentPage)
     } catch (error) {
       toast.error(error.message || 'Error al actualizar viaje')
       throw error
@@ -709,7 +725,7 @@ const ViajesPage = () => {
       toast.success(`Viaje #${viajeToDelete.id} eliminado`)
       setShowDeleteModal(false)
       setViajeToDelete(null)
-      loadViajes()
+      loadViajes(currentPage)
     } catch (error) {
       toast.error(error.message || 'Error al eliminar viaje')
     }
@@ -930,8 +946,8 @@ const ViajesPage = () => {
             <button
               onClick={() => setViewMode('week')}
               className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${viewMode === 'week'
-                  ? 'bg-white text-slate-800 shadow-sm'
-                  : 'text-slate-500 hover:text-slate-700'
+                ? 'bg-white text-slate-800 shadow-sm'
+                : 'text-slate-500 hover:text-slate-700'
                 }`}
             >
               Semanal
@@ -939,8 +955,8 @@ const ViajesPage = () => {
             <button
               onClick={() => setViewMode('month')}
               className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${viewMode === 'month'
-                  ? 'bg-white text-slate-800 shadow-sm'
-                  : 'text-slate-500 hover:text-slate-700'
+                ? 'bg-white text-slate-800 shadow-sm'
+                : 'text-slate-500 hover:text-slate-700'
                 }`}
             >
               Mensual
@@ -955,8 +971,8 @@ const ViajesPage = () => {
               key={tab.id}
               onClick={() => setActiveTabId(tab.id)}
               className={`relative px-5 py-2.5 text-sm font-medium rounded-t-lg transition-all whitespace-nowrap -mb-px border-t border-x ${activeTabId === tab.id
-                  ? 'bg-white text-gray-500 border-slate-200 z-10 font-semibold'
-                  : 'bg-slate-100 text-slate-500 border-transparent hover:bg-slate-200/80 hover:text-slate-700'
+                ? 'bg-white text-gray-500 border-slate-200 z-10 font-semibold'
+                : 'bg-slate-100 text-slate-500 border-transparent hover:bg-slate-200/80 hover:text-slate-700'
                 }`}
             >
               <div className={`flex items-center gap-2 ${activeTabId === tab.id ? 'opacity-100' : 'opacity-70'}`}>
@@ -1023,6 +1039,32 @@ const ViajesPage = () => {
           <p className="text-slate-500">No se encontraron viajes</p>
         </div>
       )}
+
+      {/* Pagination */}
+      <div className="mt-8 flex items-center justify-between border-t border-slate-200 pt-4">
+        <div className="text-sm text-slate-500">
+          Página <span className="font-medium text-slate-900">{currentPage + 1}</span> de{' '}
+          <span className="font-medium text-slate-900">{totalPages}</span>
+        </div>
+        <div className="flex space-x-2">
+          <button
+            onClick={() => loadViajes(currentPage - 1)}
+            disabled={currentPage === 0 || loading}
+            className="flex items-center px-4 py-2 border border-slate-300 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            <ChevronLeft className="h-4 w-4 mr-2" />
+            Anterior
+          </button>
+          <button
+            onClick={() => loadViajes(currentPage + 1)}
+            disabled={currentPage >= totalPages - 1 || loading}
+            className="flex items-center px-4 py-2 border border-slate-300 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            Siguiente
+            <ChevronRight className="h-4 w-4 ml-2" />
+          </button>
+        </div>
+      </div>
 
       {/* Modals */}
       <CreateViajeModal
